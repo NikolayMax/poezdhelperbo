@@ -3,14 +3,15 @@ import {Markup, Telegraf} from "telegraf";
 import {CommandsName} from "./consts";
 import {BotContext} from "../types/context";
 
-export class StartCommand extends Command{
+export class StartAction extends Command{
     constructor(bot: Telegraf<BotContext>) {
         super(bot);
     }
 
     handler(){
-        this.bot.start((ctx) => {
-            ctx.reply('Привет! Тут ты сможешь оследить свой поезд или электричку', Markup.inlineKeyboard([
+        this.bot.action(CommandsName.Start, (ctx) => {
+            ctx.answerCbQuery();
+            ctx.editMessageText('Привет! Тут ты сможешь оследить свой поезд или электричку', Markup.inlineKeyboard([
                 Markup.button.callback("Начать поиск", CommandsName.Watch),
                 Markup.button.callback("Баланс", CommandsName.Balance),
                 Markup.button.callback("Помощь", CommandsName.Help)
