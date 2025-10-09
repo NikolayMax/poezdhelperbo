@@ -1,10 +1,20 @@
-export interface SessionData {
-    selectedYear?: number;
-    selectedMonth?: number;
-    selectedDay?: number;
+import {CurrentSelectCity} from "../consts";
 
-    cityFrom?: string;
-    cityTo?: string;
+interface ICity {
+    id: number,
+    name: string,
+    slug: string,
+    entity_type_id: number
+}
+export interface IUserData {
+    selectedYear: number;
+    selectedMonth: number;
+    selectedDay: number;
 
-    prevMessageId?: number;
+    cityFrom?: ICity;
+    cityTo?: ICity;
+
+
+    currentSelectCity?: CurrentSelectCity;
+    cities?: ICity[]
 }
