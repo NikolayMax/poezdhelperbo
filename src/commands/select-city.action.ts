@@ -1,10 +1,9 @@
 import {Telegraf} from "telegraf";
-import {BotContext} from "../types/context";
 import {CommandsName, CurrentSelectCity} from "../consts";
 import {Buttons} from "../command.button";
 import {userRedis} from "../redis";
 
-export const actionSelectCity = (bot: Telegraf<BotContext>) => {
+export const actionSelectCity = (bot: Telegraf) => {
     bot.action(new RegExp(CommandsName.SelectCity), async (ctx) => {
         const slug = ctx.match[1];
         const userId = ctx.from?.id;

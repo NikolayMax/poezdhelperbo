@@ -1,11 +1,10 @@
 import {Markup, Telegraf} from "telegraf";
-import {BotContext} from "../types/context";
 import axios from "axios";
 import {CommandsName} from "../consts";
 import {Buttons} from "../command.button";
 import {userRedis} from "../redis";
 
-const action = (bot: Telegraf<BotContext>) => {
+const action = (bot: Telegraf) => {
     bot.on('message', async (ctx: any) => {
         const userId = ctx.from.id;
         const userData = await userRedis.getData(userId);
@@ -18,7 +17,7 @@ const action = (bot: Telegraf<BotContext>) => {
                 userData.cities = data.data;
                 await userRedis.setData(userId, userData);
                 ctx.deleteMessage();
-                const {text} = Buttons[CommandsName.Message](ctx)
+                const {text} = Buttons[CommandsName.Message]()
                 ctx.reply(text, Markup.inlineKeyboard(cities, {columns: 1}));
             }).catch((error) => {
             console.log(error)

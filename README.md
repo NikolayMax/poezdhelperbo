@@ -1,6 +1,3 @@
-/start
-/watch
-    /date
-    /from
-    /to
-    /train
+For Docker
+    redis
+    node

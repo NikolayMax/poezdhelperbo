@@ -1,8 +1,8 @@
 import {Telegraf } from "telegraf";
 import {config} from "dotenv";
-import {BotContext} from "./types/context";
 import {actions} from "./commands";
 import {middleware} from "./middleware";
+
 const init = async () => {
     const {error, parsed} = config();
 
@@ -14,7 +14,7 @@ const init = async () => {
         throw new Error("Config .env is empty")
     }
 
-    const bot = new Telegraf<BotContext>(parsed.TELEGRAM_KEY);
+    const bot = new Telegraf(parsed.TELEGRAM_KEY);
 
     bot.use(middleware);
     bot.on('callback_query', (ctx, next) => {

@@ -1,10 +1,9 @@
 import {CommandsName} from "../consts";
 import { Telegraf} from "telegraf";
-import {BotContext} from "../types/context";
 import {Buttons} from "../command.button";
 import {userRedis} from "../redis";
 
-const actionMonth = (bot: Telegraf<BotContext>) => {
+const actionMonth = (bot: Telegraf) => {
     bot.action(new RegExp(CommandsName.Month), async (ctx: any) => {
         const userId = ctx.from.id;
         const userData = await userRedis.getData(userId);

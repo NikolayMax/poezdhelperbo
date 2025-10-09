@@ -1,10 +1,9 @@
 import {Telegraf} from "telegraf";
-import {BotContext} from "../types/context";
 import {Buttons} from "../command.button";
 import {CommandsName} from "../consts";
 import {userRedis} from "../redis";
 
-const actionDay = (bot: Telegraf<BotContext>) => {
+const actionDay = (bot: Telegraf) => {
     bot.action(new RegExp(CommandsName.Day), async (ctx: any) => {
         const userId = ctx.from.id;
         const userData = await userRedis.getData(userId);
