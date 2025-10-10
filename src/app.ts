@@ -1,7 +1,6 @@
 import {Telegraf } from "telegraf";
 import {config} from "dotenv";
 import {actions} from "./commands";
-import {middleware} from "./middleware";
 
 const init = async () => {
     const {error, parsed} = config();
@@ -16,7 +15,6 @@ const init = async () => {
 
     const bot = new Telegraf(parsed.TELEGRAM_KEY);
 
-    bot.use(middleware);
     bot.on('callback_query', (ctx, next) => {
         ctx.answerCbQuery();
         return next()

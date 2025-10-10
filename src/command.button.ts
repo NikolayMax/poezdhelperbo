@@ -2,6 +2,7 @@ import {CommandsName, MonthNameRus} from "./consts";
 import {Markup} from "telegraf";
 import {getLastDayOfMonth, renderSelectDate, renderSelectFromCity, renderSelectToCity} from "./lib";
 import {userRedis} from "./redis";
+import {Context} from "node:vm";
 
 export const Buttons = {
     [CommandsName.Start]: () => ({
@@ -24,20 +25,21 @@ export const Buttons = {
     [CommandsName.CityTo]: () => ({
         text: 'Введите город куда:',
     }),
-    [CommandsName.WatchDate]: async (ctx: any)=> {
+    [CommandsName.WatchDate]: async (ctx: Context)=> {
         const  months = [];
         const userId = ctx.from.id;
         const {selectedMonth} = await userRedis.getData(userId);
 
-        for(let i = selectedMonth ? selectedMonth : 0 ; i <= 12; i++){
-            months.push(Markup.button.callback(MonthNameRus[i+1], `month:${i}`))
+        for(let i = selectedMonth ? selectedMonth : 0 ; i < 12; i++){
+            console.log(MonthNameRus[i])
+            months.push(Markup.button.callback(MonthNameRus[i], `month:${i}`))
         }
         return {
             text: 'Выберите месяц: ',
             buttons: Markup.inlineKeyboard(months, {columns: 4})
         }
     },
-    [CommandsName.Watch]: async (ctx: any) => {
+    [CommandsName.Watch]: async (ctx: Context) => {
         const userId = ctx.from.id;
         const userData = await userRedis.getData(userId);
 
@@ -52,7 +54,7 @@ export const Buttons = {
             ])
         }
     },
-    [CommandsName.Month]: async (ctx: any) => {
+    [CommandsName.Month]: async (ctx: Context) => {
         const days = [];
 
         const now = new Date()
@@ -62,7 +64,6 @@ export const Buttons = {
         const {selectedYear, selectedMonth, selectedDay} = await userRedis.getData(userId);
         const endDay = getLastDayOfMonth(selectedYear, selectedMonth);
 
-        console.log(selectedDay, endDay);
         for(let i = currentMonth === selectedMonth? selectedDay : 1; i <= endDay; i++){
             days.push(Markup.button.callback(`${i}`, `day:${i}`))
         }
@@ -72,5 +73,11 @@ export const Buttons = {
             buttons: Markup.inlineKeyboard(days, {columns: 7})
         }
     },
-    [CommandsName.Message]: () => ({text: 'Выберите город:'})
+    [CommandsName.Message]: () => ({text: 'Выберите город:'}),
+    [CommandsName.WatchFind]: () => {
+        return {
+            text: '',
+            buttons: Markup.inlineKeyboard([], {columns: 7})
+        }
+    }
 }

@@ -10,7 +10,7 @@ class Redis{
         this.client.connect();
     }
 
-    async set<T extends string | Object>(key: string, value: T) {
+    async set<T extends string | object>(key: string, value: T) {
         if(typeof value === 'object' && value !== null) {
             await this.client.set(key, JSON.stringify(value));
         }else{
@@ -27,6 +27,7 @@ class Redis{
         try{
             return JSON.parse(value) as T
         }catch(e){
+            console.log(e);
             return value as T;
         }
     }

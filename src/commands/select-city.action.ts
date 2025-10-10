@@ -3,6 +3,8 @@ import {CommandsName, CurrentSelectCity} from "../consts";
 import {Buttons} from "../command.button";
 import {userRedis} from "../redis";
 
+// Hello
+
 export const actionSelectCity = (bot: Telegraf) => {
     bot.action(new RegExp(CommandsName.SelectCity), async (ctx) => {
         const slug = ctx.match[1];

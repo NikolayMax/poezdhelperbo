@@ -9,6 +9,7 @@ import Message from "./message";
 import actionMonth from "./month.action";
 import actionDay from "./day.action";
 import {actionSelectCity} from "./select-city.action";
+import watchFindAction from "./watch-find.action";
 
 export const actions = [
     start,
@@ -26,5 +27,6 @@ export const actions = [
     actionMonth,
     actionDay,
 
-    actionSelectCity
+    actionSelectCity,
+    watchFindAction
 ]

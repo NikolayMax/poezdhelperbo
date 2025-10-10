@@ -6,6 +6,7 @@ export const enum CommandsName {
     Watch = '/watch',
     WatchDate = '/watch-date',
     WatchFind = 'watch-find',
+    WatchPlace = '^watch-place:([0-9]{1,15})$',
 
     CityFrom = '/coty-from',
     CityTo = '/city-to',
