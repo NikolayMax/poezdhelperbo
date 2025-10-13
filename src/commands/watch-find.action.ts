@@ -1,8 +1,9 @@
-import {Markup, Telegraf} from "telegraf";
-import {CommandsName} from "../consts";
+import { Markup, Telegraf } from "telegraf";
+import { CommandsName } from "../consts";
 import axios from "axios";
-import {userRedis} from "../redis";
-import {ITrain} from "../types/traine.interface";
+import { userRedis } from "../redis";
+import { ITrain } from "../types/traine.interface";
+import { searchRzdTickets } from "../search.tickets";
 
 const action = (bot: Telegraf) => {
     bot.action(CommandsName.WatchFind, async (ctx) => {
@@ -10,33 +11,16 @@ const action = (bot: Telegraf) => {
         const userData = await userRedis.getData(userId);
         userData.cities = [];
         console.log(userData);
-        const {cityFrom, cityTo, selectedYear, selectedMonth, selectedDay} = userData;
+        const { cityFrom, cityTo, selectedYear, selectedMonth, selectedDay } = userData;
 
-        if(!cityFrom || !cityTo)
+        if (!cityFrom || !cityTo)
             return ctx.reply('Не выбраны города или город');
 
-        let tains: ITrain[] = [];
-        for(let i = 0; i < 3; i++){
-            const unixTimestamp = Math.floor((new Date(selectedYear, selectedMonth, selectedDay+i)).getTime() / 1000);
-            const url = `https://api.svrpk.ru/api/v1/train-tickets?station_from=${cityFrom.id}&station_to=${cityTo.id}&date=${unixTimestamp}`
 
-            console.log(url)
-            const {data} = await axios.get<{data: ITrain[]}>(url)
+        const trains = await searchRzdTickets(cityFrom.id, cityTo.id, `${selectedYear}-${(selectedMonth + 1).toString().padStart(2, '0')}-${selectedDay.toString().padStart(2, '0')}`)
 
-            tains = data.data.reduce((acc, train) => {
-                const isFind= acc.find((trainAcc) => trainAcc.id === train.id);
-                if(!isFind){
-                    acc.push(train);
-                }
-                return acc;
-            }, tains)
-        }
-
-        console.log(tains)
-
-
-
-        tains.forEach((train) => {
+        console.log(trains)
+        trains.Trains.filter(train => train.IsSuburban === true).forEach((train) => {
             const keyboard = Markup.inlineKeyboard([
                 Markup.button.callback("Отследить место", `watch-place:${train.id}`),
             ])
@@ -47,26 +31,53 @@ const action = (bot: Telegraf) => {
         })
     })
 }
+function generateDetailedTrainMessage(train: any) {
+    // Форматируем время в пути
+    const tripDurationHours = Math.floor(train.TripDuration / 60);
+    const tripDurationMinutes = train.TripDuration % 60;
+    const travelTime = `${tripDurationHours}ч ${tripDurationMinutes}м`;
 
-function generateDetailedTrainMessage(train: ITrain) {
+    // Форматируем дату и время
+    const departureDate = new Date(train.LocalDepartureDateTime).toLocaleDateString('ru-RU');
+    const departureTime = new Date(train.LocalDepartureDateTime).toLocaleTimeString('ru-RU', {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+    const arrivalTime = new Date(train.LocalArrivalDateTime).toLocaleTimeString('ru-RU', {
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+
+    // Генерируем сообщение о местах
+    const seatsMessage = generateSeatsMessage(train.CarGroups);
+
+    // Определяем минимальную цену
+    let minPrice = null;
+    if (train.CarGroups && train.CarGroups.length > 0) {
+        minPrice = Math.min(...train.CarGroups.map((car: any) => car.MinPrice).filter((price: any) => price !== null));
+    }
+
     return `
-        🚂 <b>${train.number}</b> - ${train.name}
+🚂 <b>Поезд ${train.TrainNumber}</b>${train.TrainName ? ` - ${train.TrainName}` : ''}
 
-        📅 <b>Дата:</b> ${train.departure_data.date}
-        🕒 <b>Время:</b> ${train.departure_data.time} → ${train.arrival_data.time}
-        ⏱ <b>В пути:</b> ${train.travel_time}
+📅 <b>Дата:</b> ${departureDate}
+🕒 <b>Время:</b> ${departureTime} → ${arrivalTime}
+⏱ <b>В пути:</b> ${travelTime}
+📏 <b>Расстояние:</b> ${train.TripDistance} км
 
-        🏁 <b>Станции:</b>
-        ▫️ Отправление: ${train.departure_data.station}
-        ▫️ Прибытие: ${train.arrival_data.station}
+🏁 <b>Станции:</b>
+▫️ Отправление: ${train.OriginName}
+▫️ Прибытие: ${train.DestinationName}
 
-        💺 <b>Доступные места:</b>
-        ${generateSeatsMessage(train.place_count)}
+🚉 <b>Маршрут:</b>
+▫️ Начальная: ${train.InitialStationName}
+▫️ Конечная: ${train.FinalStationName}
 
-        💰 <b>Стоимость:</b> от ${train.cost_data.SCHOOL_STUDENTS_CADETS.cost} ₽
+${seatsMessage}
+
+${minPrice ? `💰 <b>Стоимость:</b> от ${Math.round(minPrice)} ₽` : '💰 <b>Стоимость:</b> Информация отсутствует'}
   `.trim();
 }
-
 function generateSeatsMessage(count: number) {
     if (count < 1) {
         return '❌ Мест нет';

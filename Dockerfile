@@ -12,5 +12,5 @@ COPY . ./
 
 EXPOSE 3000
 
-CMD ["npm", "run", "dev:run"]
+CMD ["npm", "run", "dev"]
 

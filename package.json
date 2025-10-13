@@ -6,10 +6,9 @@
   "scripts": {
     "lint": "eslint",
     "lint:fix": "eslint --fix",
-    "dev": "vite build --watch",
     "build": "vite build",
     "start": "node dist/app.mjs",
-    "dev:run": "npm run dev & nodemon dist/app.mjs"
+    "dev": "vite build && node dist/app.mjs"
   },
   "keywords": [],
   "author": "",
