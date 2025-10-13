@@ -1,32 +1,34 @@
-import {createClient, RedisClientType } from "redis";
-import {IUserData} from "./types/session";
+import { createClient, RedisClientType } from "redis";
+import { IUserData } from "./types/session";
 
-class Redis{
+class Redis {
     private client: RedisClientType;
 
     constructor() {
-        this.client = createClient();
+        this.client = createClient({
+            url: process.env.REDIS_URL || 'redis://redis:6379'
+        });
         this.client.on("error", (err) => console.log("Redis Client Error", err));
         this.client.connect();
     }
 
     async set<T extends string | object>(key: string, value: T) {
-        if(typeof value === 'object' && value !== null) {
+        if (typeof value === 'object' && value !== null) {
             await this.client.set(key, JSON.stringify(value));
-        }else{
+        } else {
             await this.client.set(key, value);
         }
     }
 
-     async get<T>(key: string): Promise<T | null> {
+    async get<T>(key: string): Promise<T | null> {
         const value = await this.client.get(key);
 
-        if(!value)
+        if (!value)
             return null;
 
-        try{
+        try {
             return JSON.parse(value) as T
-        }catch(e){
+        } catch (e) {
             console.log(e);
             return value as T;
         }
@@ -35,11 +37,11 @@ class Redis{
         this.client.destroy();
     }
 }
-class UserRedis extends Redis{
+class UserRedis extends Redis {
 
-    initData(userId: number){
+    initData(userId: number) {
         const now = new Date()
-        const userData:IUserData = {
+        const userData: IUserData = {
             selectedDay: now.getDate(),
             selectedMonth: now.getMonth(),
             selectedYear: now.getFullYear()
@@ -48,20 +50,20 @@ class UserRedis extends Redis{
     }
 
     getKey(id: number): string {
-            return `user:${id}`;
+        return `user:${id}`;
     }
 
     async getData(userId: number): Promise<IUserData> {
         const userData = await super.get<IUserData>(this.getKey(userId));
 
-        if(!userData) {
+        if (!userData) {
             return this.initData(userId)
 
         }
         return userData;
     }
 
-    async setData(userId: number, value: IUserData): Promise<IUserData>{
+    async setData(userId: number, value: IUserData): Promise<IUserData> {
         await super.set(this.getKey(userId), value);
         return value
     }
