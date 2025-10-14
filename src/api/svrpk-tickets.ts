@@ -1,14 +1,12 @@
 
 export const getSvrpkTickets = async <T>(station_from:number, station_to:number, date: string): Promise<T> => {
     const baseUrl = 'https://api.svrpk.ru/api/v1/train-tickets';
-
     const params = new URLSearchParams({
         station_from: station_from.toString(),
         station_to: station_to.toString(),
         date
     });
     const url = `${baseUrl}?${params}`;
-
 
     try{
         console.log('Выполняем запрос к:', url);
@@ -18,7 +16,6 @@ export const getSvrpkTickets = async <T>(station_from:number, station_to:number,
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
-                // РЖД часто требует определенные заголовки
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
                 'Referer': 'https://ticket.rzd.ru/',
                 'Origin': 'https://ticket.rzd.ru'
