@@ -1,4 +1,4 @@
-import {IUserData} from "./types/session";
+import {IUserData} from "../types/user.interface";
 
 const isSelectedDate = ({selectedYear, selectedMonth,selectedDay}:IUserData) => {
     return selectedYear !== undefined &&

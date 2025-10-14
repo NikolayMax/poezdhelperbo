@@ -1,9 +1,7 @@
 import {Telegraf} from "telegraf";
-import {CommandsName, CurrentSelectCity} from "../consts";
-import {Buttons} from "../command.button";
-import {userRedis} from "../redis";
-
-// Hello
+import {CommandsName, CurrentSelectCity} from "../../utils/consts";
+import {Buttons} from "./watch.action";
+import {userRedis} from "../../services/user.service";
 
 export const actionSelectCity = (bot: Telegraf) => {
     bot.action(new RegExp(CommandsName.SelectCity), async (ctx) => {
@@ -20,7 +18,7 @@ export const actionSelectCity = (bot: Telegraf) => {
 
         await userRedis.setData(userId, userData);
 
-        const {text, buttons} = await Buttons[CommandsName.Watch](ctx)
+        const {text, buttons} = await Buttons(ctx)
         ctx.reply(text, buttons)
     });
 }

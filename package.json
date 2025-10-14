@@ -4,11 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "lint": "eslint",
+    "lint": "eslint ./src",
     "lint:fix": "eslint --fix",
     "build": "vite build",
     "start": "node dist/app.mjs",
-    "dev": "vite build && node dist/app.mjs"
+    "dev": "vite build"
   },
   "keywords": [],
   "author": "",

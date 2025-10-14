@@ -1,19 +1,13 @@
-import {CurrentSelectCity} from "../consts";
+import {CurrentSelectCity} from "../utils/consts";
+import {ICity} from "./svrpk-train.interface";
 
-interface ICity{
-    id: number,
-    name: string,
-    slug: string,
-    entity_type_id: number
-}
-export interface IUserData{
+export interface IUserData {
     selectedYear: number;
     selectedMonth: number;
     selectedDay: number;
 
     cityFrom?: ICity;
     cityTo?: ICity;
-
 
     currentSelectCity?: CurrentSelectCity;
     cities?: ICity[]

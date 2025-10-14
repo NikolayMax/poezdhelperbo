@@ -1,10 +1,10 @@
 import {Telegraf} from "telegraf";
-import {CommandsName} from "../consts";
-import {Buttons} from "../command.button";
+import {CommandsName} from "../../utils/consts";
+import {Buttons} from "./start.command";
 
 const action = (bot: Telegraf) => {
     bot.action(CommandsName.Start, (ctx) => {
-        const {text, buttons} = Buttons[CommandsName.Start]();
+        const {text, buttons} = Buttons();
         ctx.reply(text, buttons);
     });
 }

@@ -1,5 +1,8 @@
 import { resolve } from "path";
 import { defineConfig } from "vite"
+import { spawn, type ChildProcess } from 'child_process';
+
+let nodeProcess: null | ChildProcess = null;
 
 export default defineConfig({
   build: {
@@ -14,7 +17,7 @@ export default defineConfig({
     rollupOptions: {
       external: [
         'fs', 'path', 'http', 'https', 'url', 'stream', 'until',
-        'os',
+        'os', 'crypto',
         'telegraf', 'redis'
       ],
       output: {
@@ -22,6 +25,41 @@ export default defineConfig({
         preserveModules: false
       }
     },
-    emptyOutDir: true
+    emptyOutDir: true,
+      watch: {
+        chokidar: {
+            usePolling: true,
+            interval: 1000
+        }
+      }
   },
+    plugins: [
+        {
+            name: 'run-node-after-build',
+            apply: 'build',
+            closeBundle() {
+                console.log('📦 Сборка завершена, запускаем node ./app.mjs...');
+
+                if(nodeProcess){
+                    console.log('🛑 Останавливаем предыдущий процесс Node.js...');
+                    nodeProcess.kill('SIGTERM');
+                }
+
+                nodeProcess = spawn('node', ['./dist/app.mjs'], {
+                    stdio: 'inherit',
+                    shell: true
+                });
+
+                nodeProcess.on('close', (code) => {
+                    console.log(`🔚 Node.js процесс завершен с кодом: ${code}`);
+                    nodeProcess = null;
+                });
+
+                nodeProcess.on('error', (err) => {
+                    console.error('❌ Ошибка Node.js процесса:', err);
+                    nodeProcess = null;
+                });
+            }
+        }
+    ]
 })
