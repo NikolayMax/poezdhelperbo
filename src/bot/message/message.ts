@@ -1,8 +1,8 @@
 import { Markup, Telegraf } from 'telegraf';
 import axios from 'axios';
 import { userRedis } from '../../services/user.service';
-import { ICity } from '../../types/svrpk-train.interface';
 import messageService from '../../services/message-template.service';
+import { ICity } from '../../types/city.interface';
 
 const action = (bot: Telegraf) => {
 	bot.on('message', async (ctx) => {

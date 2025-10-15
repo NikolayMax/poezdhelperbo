@@ -1,13 +1,18 @@
-import { Markup, Telegraf } from 'telegraf';
-import { CommandsName } from '../../utils/consts';
+import { Context, Markup } from 'telegraf';
 import { userRedis } from '../../services/user.service';
-import { ITrain } from '../../types/traine.interface';
+import { ITrain } from '../../types/svrpk-train.interface';
 import { getSvrpkTickets, searchRzdTickets } from '../../api';
 import { IRzdTrain } from '../../types/rzd-train.interface';
 import messageService from '../../services/message-template.service';
+import { Action } from '../../decorator/action.decorator';
+import { WATCH_FIND_ACTION } from './consts';
 
-const action = (bot: Telegraf) => {
-	bot.action(CommandsName.WatchFind, async (ctx) => {
+class WatchFindAction {
+	@Action(WATCH_FIND_ACTION)
+	async action(ctx: Context) {
+		if (!ctx.from) {
+			return ctx.reply(messageService.userDataError());
+		}
 		const userId = ctx.from.id;
 		const userData = await userRedis.getData(userId);
 		const { cityFrom, cityTo, selectedYear, selectedMonth, selectedDay } = userData;
@@ -45,6 +50,7 @@ const action = (bot: Telegraf) => {
 				...keyboard,
 			});
 		});
-	});
-};
-export default action;
+	}
+}
+const watchFindAction = new WatchFindAction();
+export default watchFindAction;

@@ -1,5 +1,5 @@
-import { CurrentSelectCity } from '../utils/consts';
 import { ICity } from './city.interface';
+import { CurrentSelectCity } from '../bot/select-city/consts';
 
 export interface IUserData {
 	selectedYear: number;

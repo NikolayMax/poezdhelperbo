@@ -1,14 +1,19 @@
-import { Telegraf } from 'telegraf';
-import { CommandsName } from '../../utils/consts';
+import { Context } from 'telegraf';
 import { addSchedule } from '../../utils/schedule';
 import { getSvrpkTickets } from '../../api';
 import { userRedis } from '../../services/user.service';
-import { ITrain } from '../../types/traine.interface';
 import messageService from '../../services/message-template.service';
+import { WATCH_PLACE } from './consts';
+import { Action } from '../../decorator/action.decorator';
+import { ITrain } from '../../types/svrpk-train.interface';
 
-const action = (bot: Telegraf) => {
-	bot.action(new RegExp(CommandsName.WatchPlace), async (ctx) => {
-		const findTrainId = ctx.match[1];
+class WatchPlaceAction {
+	@Action(new RegExp(WATCH_PLACE))
+	async action(ctx: Context) {
+		if (!('match' in ctx)) {
+			return ctx.reply('Error: match not found in ctx');
+		}
+		const findTrainId = (ctx.match as string[])[1];
 		if (!ctx.from) {
 			return ctx.reply(messageService.userDataError());
 		}
@@ -42,6 +47,7 @@ const action = (bot: Telegraf) => {
 			},
 		});
 		await ctx.reply(await messageService.messageFindPlace(ctx));
-	});
-};
-export default action;
+	}
+}
+const watchPlaceAction = new WatchPlaceAction();
+export default watchPlaceAction;

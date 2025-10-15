@@ -1,7 +1,7 @@
 import { Context } from 'telegraf';
 import { userRedis } from './user.service';
 import { IRzdTrain } from '../types/rzd-train.interface';
-import { ITrain } from '../types/traine.interface';
+import { ITrain } from '../types/svrpk-train.interface';
 
 class MessageTemplateService {
 	async messageNotFoundTrains(ctx: Context) {
