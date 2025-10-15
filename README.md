@@ -1,3 +1,3 @@
 For Docker
-    redis
-    node
+redis
+node

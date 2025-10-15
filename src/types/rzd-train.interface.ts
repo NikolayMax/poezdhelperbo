@@ -1,19 +1,21 @@
-export interface IRzdTrain{
+export interface IRzdTrain {
+  IsSuburban: boolean;
+  TrainNumber: string;
+  CategoryId: number;
+  countSeats: number;
+  TripDuration: number;
+  TripDistance: number;
 
-    IsSuburban: boolean,
-    TrainNumber: string,
-    countSeats: number,
-    TripDuration: number,
-    TripDistance: number,
+  LocalDepartureDateTime: string;
+  LocalArrivalDateTime: string;
 
-    LocalDepartureDateTime: string,
-    LocalArrivalDateTime: string,
+  TrainName: string;
 
-    TrainName: string,
+  OriginName: string;
+  DestinationName: string;
 
-    OriginName: string,
-    DestinationName: string,
-
-    InitialStationName: string,
-    FinalStationName: string,
+  InitialStationName: string;
+  FinalStationName: string;
+  TransportType: string;
+  TrainDescription: string;
 }

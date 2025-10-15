@@ -1,3 +1,3 @@
-import {init} from "./bot/bot";
+import { init } from './bot/bot';
 
-init()
+init();
