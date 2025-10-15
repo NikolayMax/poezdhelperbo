@@ -13,22 +13,22 @@ import watchFindAction from './watch-find.action';
 import watchPlaceAction from './watch-place.action';
 
 export const actions = [
-  start,
-  startCommand,
+	start,
+	startCommand,
 
-  cityToAction,
-  cityFromAction,
+	cityToAction,
+	cityFromAction,
 
-  balanceAction,
+	balanceAction,
 
-  watchAction,
-  watchDateAction,
+	watchAction,
+	watchDateAction,
 
-  Message,
-  actionMonth,
-  actionDay,
+	Message,
+	actionMonth,
+	actionDay,
 
-  actionSelectCity,
-  watchFindAction,
-  watchPlaceAction,
+	actionSelectCity,
+	watchFindAction,
+	watchPlaceAction,
 ];
