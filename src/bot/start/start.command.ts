@@ -1,14 +1,14 @@
+import { Context } from 'grammy';
 import { Command } from '../../decorator/command.decorator';
-import startAction from './start.action';
 import { START } from './consts';
-import { Context } from 'telegraf';
+import { StartAction } from './start.action';
 
-class StartCommand {
+export class StartCommand {
+	constructor(private readonly startAction: StartAction) {}
+
 	@Command(START)
-	command(ctx: Context) {
-		const { text, buttons } = startAction.buttons();
-		ctx.reply(text, buttons);
+	async command(ctx: Context) {
+		const { text, reply_markup } = this.startAction.buttons();
+		await ctx.reply(text, { reply_markup });
 	}
 }
-const startCommand = new StartCommand();
-export default startCommand;

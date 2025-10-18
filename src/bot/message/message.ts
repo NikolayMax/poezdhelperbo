@@ -1,35 +1,36 @@
-import { Markup, Telegraf } from 'telegraf';
-import axios from 'axios';
-import { userRedis } from '../../services/user.service';
-import messageService from '../../services/message-template.service';
+import { InlineKeyboard, Context } from 'grammy';
+import { UserRedis } from '../../services/user.service';
 import { ICity } from '../../types/city.interface';
+import { TemplateService } from '../../services/message-template.service';
 
-const action = (bot: Telegraf) => {
-	bot.on('message', async (ctx) => {
-		const userId = ctx.from.id;
-		const userData = await userRedis.getData(userId);
+export class Message {
+	constructor(
+		private readonly userRedis: UserRedis,
+		private readonly templateService: TemplateService,
+	) {}
 
-		if (!('text' in ctx.message)) {
-			return ctx.reply(messageService.messageEmpty());
-		}
+	async action(ctx: Context) {
+		const userId = ctx.from!.id;
+		const userData = await this.userRedis.getData(userId);
 
-		axios
-			.get<{ data: ICity[] }>(`https://api.svrpk.ru/api/v1/suggest/stations?name=${ctx.message.text}`)
-			.then(async ({ data }) => {
-				const cities = data.data.map((city) => {
-					return Markup.button.callback(city.name, `select-city:${city.slug}`);
+		fetch(`https://api.svrpk.ru/api/v1/suggest/stations?name=${ctx.message?.text || ''}`)
+			.then((response) => response.json())
+			.then(async ({ data }: { data: ICity[] }) => {
+				const inlineKeyboard = new InlineKeyboard();
+
+				data.forEach((city) => {
+					inlineKeyboard.text(city.name, `select-city:${city.slug}`);
 				});
-				userData.cities = data.data;
-				await userRedis.setData(userId, userData);
-				ctx.deleteMessage();
-				if (cities.length < 1) {
-					return ctx.reply(messageService.messageCityNotFound());
+				userData.cities = data;
+				await this.userRedis.setData(userId, userData);
+				if (data.length < 1) {
+					await ctx.reply(this.templateService.messageCityNotFound());
+					return;
 				}
-				ctx.reply('✅ Найдено несколько станций:', Markup.inlineKeyboard(cities, { columns: 1 }));
+				await ctx.reply('✅ Найдено несколько станций:', { reply_markup: inlineKeyboard });
 			})
 			.catch((error) => {
 				console.log(error);
 			});
-	});
-};
-export default action;
+	}
+}

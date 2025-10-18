@@ -1,19 +1,30 @@
-import { Context, Telegraf } from 'telegraf';
+import { Bot } from 'grammy';
+import { ActionContext, BotContext } from '../types/bot.interface';
 
 export class ActionRegistry {
-	private static actions: { action: string; handler: (ctx: Context) => void }[] = [];
-	static register(action: string, handler: (ctx: Context) => void) {
-		this.actions.push({ action, handler });
+	private static actions: Map<string | RegExp, (ctx: ActionContext) => void> = new Map();
+
+	static register(action: string | RegExp, handler: (ctx: ActionContext) => void) {
+		this.actions.set(action, handler);
 	}
-	static setupBot(bot: Telegraf) {
-		this.actions.forEach(({ action, handler }) => {
-			bot.action(action, handler);
+
+	static setupBot(bot: Bot<BotContext>) {
+		this.actions.forEach((handler, action) => {
+			bot.callbackQuery(action, handler);
 		});
 	}
 }
+
 export function Action(actionName: string | RegExp) {
-	return function (target: any, propertyName: string, descriptor: PropertyDescriptor) {
-		ActionRegistry.register(actionName.toString(), target[propertyName].bind(target));
-		return descriptor;
+	return function <This, Return>(
+		_target: (this: This, ctx: ActionContext) => Return,
+		context: ClassMethodDecoratorContext<This, (ctx: ActionContext) => void>,
+	) {
+		context.addInitializer(function (this: This) {
+			const method = this[context.name as keyof This] as (ctx: ActionContext) => void;
+			if (typeof method === 'function') {
+				ActionRegistry.register(actionName, method.bind(this));
+			}
+		});
 	};
 }

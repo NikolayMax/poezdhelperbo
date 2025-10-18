@@ -1,56 +1,80 @@
-import { Context, Markup } from 'telegraf';
-import { userRedis } from '../../services/user.service';
+import { InlineKeyboard } from 'grammy';
+import { UserRedis } from '../../services/user.service';
 import { ITrain } from '../../types/svrpk-train.interface';
 import { getSvrpkTickets, searchRzdTickets } from '../../api';
 import { IRzdTrain } from '../../types/rzd-train.interface';
-import messageService from '../../services/message-template.service';
+import { TemplateService } from '../../services/message-template.service';
 import { Action } from '../../decorator/action.decorator';
 import { WATCH_FIND_ACTION } from './consts';
+import { IUserData } from '../../types/user.interface';
+import { ActionContext } from '../../types/bot.interface';
 
-class WatchFindAction {
+export class WatchFindAction {
+	constructor(
+		private readonly userRedis: UserRedis,
+		private readonly templateService: TemplateService,
+	) {}
+
 	@Action(WATCH_FIND_ACTION)
-	async action(ctx: Context) {
-		if (!ctx.from) {
-			return ctx.reply(messageService.userDataError());
-		}
+	async action(ctx: ActionContext) {
 		const userId = ctx.from.id;
-		const userData = await userRedis.getData(userId);
+		const userData = await this.userRedis.getData(userId);
+		try {
+			const filteredTrains = await this.filterTrains(userData);
+			if (typeof filteredTrains === 'string') {
+				await ctx.reply(filteredTrains);
+				return;
+			}
+			if (filteredTrains.length < 1) {
+				await ctx.reply(await this.templateService.messageNotFoundTrains(ctx));
+			}
+			const inlineKeyboard = new InlineKeyboard();
+			for (const train of filteredTrains) {
+				if (train.countSeats < 1) {
+					inlineKeyboard.text(`🚆 Отследить: [${train.TrainNumber}]`, `watch-place:${train.TrainNumber}`);
+				}
+
+				const message = await ctx.reply(this.templateService.generateDetailedTrainMessage(train), {
+					parse_mode: 'HTML',
+					reply_markup: inlineKeyboard,
+				});
+				ctx.session.messageIds.push(message.message_id);
+			}
+		} catch (e) {
+			if (isError(e)) ctx.reply(`Error: ${e.message}`);
+		}
+	}
+
+	async filterTrains(userData: IUserData) {
+		userData.cities = [];
 		const { cityFrom, cityTo, selectedYear, selectedMonth, selectedDay } = userData;
 		if (!cityFrom) {
-			return messageService.noDepartureCity();
+			return this.templateService.noDepartureCity();
 		}
 		if (!cityTo) {
-			return messageService.noArrivalCity();
+			return this.templateService.noArrivalCity();
 		}
-		userData.cities = [];
-
+		const now = new Date();
 		const date = `${selectedYear}-${(selectedMonth + 1).toString().padStart(2, '0')}-${selectedDay.toString().padStart(2, '0')}`;
-		const trains = await searchRzdTickets<{ Trains: IRzdTrain[] }>(cityFrom.id.toString(), cityTo.id.toString(), date);
-		const unixTimestamp = Math.floor(new Date(selectedYear, selectedMonth, selectedDay).getTime() / 1000);
-		const trains2 = await getSvrpkTickets<{ data: ITrain[] }>(cityFrom.id, cityTo.id, unixTimestamp.toString());
 
-		const filteredTrains = trains.Trains.filter((train) => {
+		const trains = await searchRzdTickets<{ Trains: IRzdTrain[] }>(
+			cityFrom.id.toString(),
+			cityTo.id.toString(),
+			date,
+		);
+		const unixTimestamp =
+			now.getDate() === selectedDay
+				? Math.floor(Date.now() / 1000 + 10)
+				: new Date(selectedYear, selectedMonth, selectedDay).getTime() / 1000;
+		const trains2 = await getSvrpkTickets<{ data: ITrain[] }>(cityFrom.id, cityTo.id, unixTimestamp.toString());
+		return trains.Trains.filter((train) => {
 			const trainFind = trains2.data.find((item) => item.number === train.TrainNumber);
 			train.countSeats = trainFind ? trainFind.place_count : 0;
 
 			return train.IsSuburban && train.CategoryId === 12;
 		});
-		if (filteredTrains.length < 1) {
-			ctx.reply(await messageService.messageNotFoundTrains(ctx));
-		}
-		filteredTrains.forEach((train) => {
-			const inlineKeyboard = [];
-			if (train.countSeats < 1) {
-				inlineKeyboard.push(Markup.button.callback(`🚆 Отследить: [${train.TrainNumber}]`, `watch-place:${train.TrainNumber}`));
-			}
-			const keyboard = Markup.inlineKeyboard(inlineKeyboard);
-
-			ctx.reply(messageService.generateDetailedTrainMessage(train), {
-				parse_mode: 'HTML',
-				...keyboard,
-			});
-		});
 	}
 }
-const watchFindAction = new WatchFindAction();
-export default watchFindAction;
+function isError(error: unknown): error is Error {
+	return error instanceof Error;
+}

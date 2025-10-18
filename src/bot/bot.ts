@@ -1,47 +1,80 @@
-import { config } from 'dotenv';
-import { Telegraf } from 'telegraf';
+import { Bot, session, NextFunction } from 'grammy';
+import {
+	StartCommand,
+	StartAction,
+	WatchAction,
+	WatchDateAction,
+	CityFromAction,
+	CityToAction,
+	WatchFindAction,
+	MonthAction,
+	SelectCityAction,
+	DayAction,
+	Message,
+	WatchPlaceAction,
+} from './';
 import { ActionRegistry } from '../decorator/action.decorator';
-import './balance/balance.action';
-import './city-from/city-from.action';
-import './city-to/city-to.action';
-import './day/day.action';
-import './month/month.action';
-import './select-city/select-city.action';
-import './watch/watch.action';
-import './watch-find/watch-find.action';
-import './watch-date/watch-date.action';
-import './watch-place/watch-place.action';
-import './start/start.command';
-import './start/start.action';
-import './balance/balance.action';
-import messageAction from './message/message';
 import { CommandRegistry } from '../decorator/command.decorator';
+import { UserRedis } from '../services/user.service';
+import { TemplateService } from '../services/message-template.service';
+import { BotContext, SessionData } from '../types/bot.interface';
 
-export const init = async () => {
-	const { error, parsed } = config();
+function initial(): SessionData {
+	return { messageIds: [] };
+}
 
-	if (error) {
-		throw new Error('Error parse .env');
+export class BotTelegram {
+	private readonly bot: Bot<BotContext> | undefined;
+	private readonly userRedis: UserRedis | undefined;
+
+	constructor(TELEGRAM_KEY: string | undefined) {
+		if (!TELEGRAM_KEY) {
+			console.error('TELEGRAM_KEY: not found');
+			return;
+		}
+		this.bot = new Bot<BotContext>(TELEGRAM_KEY);
+		this.bot.use(session({ initial }));
+		this.bot.use(this.middleware);
+		this.userRedis = new UserRedis();
+
+		const templateService = new TemplateService(this.userRedis);
+		new WatchDateAction(this.userRedis);
+		new CityFromAction(this.userRedis);
+		new CityToAction(this.userRedis, templateService);
+		new MonthAction(this.userRedis);
+		new WatchPlaceAction(this.userRedis, templateService);
+		new WatchFindAction(this.userRedis, templateService);
+		const watchAction = new WatchAction(this.userRedis);
+		const startAction = new StartAction();
+		new StartCommand(startAction);
+		new DayAction(this.userRedis, watchAction);
+		new SelectCityAction(this.userRedis, watchAction);
+
+		const message = new Message(this.userRedis, templateService);
+
+		ActionRegistry.setupBot(this.bot);
+		CommandRegistry.setupBot(this.bot);
+		this.bot.on('message:text', message.action.bind(message));
+
+		this.bot
+			.start()
+			.then(() => console.log('START LISTEN APP'))
+			.catch((e) => console.error(e));
 	}
 
-	if (!parsed) {
-		throw new Error('Config .env is empty');
-	}
-
-	if (!('TELEGRAM_KEY' in parsed)) {
-		throw new Error('TELEGRAM_KEY not found');
-	}
-
-	const bot = new Telegraf(parsed.TELEGRAM_KEY);
-
-	bot.on('callback_query', async (ctx, next) => {
-		await ctx.answerCbQuery();
+	middleware(ctx: BotContext, next: NextFunction) {
+		if (ctx.session.messageIds.length > 0 && ctx.chat?.id) {
+			let messageId;
+			while ((messageId = ctx.session.messageIds.pop())) {
+				ctx.api.deleteMessage(ctx.chat?.id, messageId);
+			}
+		} else {
+			try {
+				ctx.deleteMessage();
+			} catch (e) {
+				console.log(e);
+			}
+		}
 		return next();
-	});
-
-	ActionRegistry.setupBot(bot);
-	CommandRegistry.setupBot(bot);
-	messageAction(bot);
-
-	bot.launch();
-};
+	}
+}

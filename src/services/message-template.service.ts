@@ -1,43 +1,34 @@
-import { Context } from 'telegraf';
-import { userRedis } from './user.service';
+import { Context } from 'grammy';
+import { UserRedis } from './user.service';
 import { IRzdTrain } from '../types/rzd-train.interface';
 import { ITrain } from '../types/svrpk-train.interface';
 
-class MessageTemplateService {
-	async messageNotFoundTrains(ctx: Context) {
-		if (!ctx.from) {
-			return 'Не удалось получить информацию о пользователе';
-		}
-		const userId = ctx.from.id;
-		const userData = await userRedis.getData(userId);
-		const { cityFrom, cityTo, selectedYear, selectedMonth, selectedDay } = userData;
+export class TemplateService {
+	constructor(private readonly userRedis: UserRedis) {}
 
-		if (!cityFrom || !cityTo) {
-			return 'Не выбраны города или город';
-		}
+	userDataError() {
+		return "'Не удалось получить информацию о пользователе'";
+	}
+	messageCityNotFound() {
 		return `
-            😔 *Ничего не найдено*
-        
-            По вашему запросу "[${cityFrom.name}] → [${cityTo.name}] на [${selectedDay.toString().padStart(2, '0')}.${selectedMonth + 1}.${selectedYear}]" электричек не найдено.
-            
-            *Попробуйте:*
-            • Изменить дату поездки
-            • Проверить написание городов
-            • Выбрать соседние крупные станции
-            
-            Хотите попробовать другой маршрут?
+😕 *Город не найден*
+
+К сожалению, я не смог найти населённый пункт «*[Введенное пользователем название]*».
+
+*Что можно сделать?*
+• ✏️ *Проверьте написание*. Возможно, в названии есть опечатка.
+• 🧭 *Уточните название*. Используйте официальное название станции или города. Например, не «СПб», а «Санкт-Петербург».
+• 🗺️ *Введите крупный город рядом*. Я ищу станции в основном составе направлений.
         `.trim();
 	}
 
 	async messageFindPlace(ctx: Context) {
-		if (!('match' in ctx)) return 'Error: messageFindPlace not found match in ctx';
-
 		if (!ctx.from) {
 			return 'Не удалось получить информацию о пользователе';
 		}
 
 		const userId = ctx.from.id;
-		const { selectedYear, selectedMonth, selectedDay, cityFrom, cityTo } = await userRedis.getData(userId);
+		const { selectedYear, selectedMonth, selectedDay, cityFrom, cityTo } = await this.userRedis.getData(userId);
 		if (!cityFrom) {
 			return this.noDepartureCity();
 		}
@@ -59,6 +50,12 @@ class MessageTemplateService {
 *Ожидайте обновлений!* ⏳
         `.trim();
 	}
+	noDepartureCity() {
+		return '📍 *Не выбран город отправления*...';
+	}
+	noArrivalCity() {
+		return '🎯 *Не выбран город назначения*...';
+	}
 	generateDetailedFindTrainMessage(train: ITrain) {
 		const seatsMessage = this.generateSeatsMessage(train.place_count);
 
@@ -76,6 +73,39 @@ class MessageTemplateService {
 
 ${seatsMessage}
         `.trim();
+	}
+
+	async messageNotFoundTrains(ctx: Context) {
+		if (!ctx.from) {
+			return 'Не удалось получить информацию о пользователе';
+		}
+		const userId = ctx.from.id;
+		const userData = await this.userRedis.getData(userId);
+		const { cityFrom, cityTo, selectedYear, selectedMonth, selectedDay } = userData;
+
+		if (!cityFrom || !cityTo) {
+			return 'Не выбраны города или город';
+		}
+		return `
+            😔 *Ничего не найдено*
+        
+            По вашему запросу "[${cityFrom.name}] → [${cityTo.name}] на [${selectedDay.toString().padStart(2, '0')}.${selectedMonth + 1}.${selectedYear}]" электричек не найдено.
+            
+            *Попробуйте:*
+            • Изменить дату поездки
+            • Проверить написание городов
+            • Выбрать соседние крупные станции
+            
+            Хотите попробовать другой маршрут?
+        `.trim();
+	}
+
+	generateSeatsMessage(count: number) {
+		if (count < 1) {
+			return '❌ Мест нет';
+		}
+
+		return `▫️ ${typeof count === 'number' ? count : 0} мест •`;
 	}
 
 	generateDetailedTrainMessage(train: IRzdTrain) {
@@ -117,37 +147,4 @@ ${seatsMessage}
 ${seatsMessage}
         `.trim();
 	}
-	generateSeatsMessage(count: number) {
-		if (count < 1) {
-			return '❌ Мест нет';
-		}
-
-		return `▫️ ${typeof count === 'number' ? count : 0} мест •`;
-	}
-	noDepartureCity() {
-		return '📍 *Не выбран город отправления*...';
-	}
-	noArrivalCity() {
-		return '🎯 *Не выбран город назначения*...';
-	}
-	messageEmpty() {
-		return '❓ *Пустой запрос*';
-	}
-	userDataError() {
-		return "'Не удалось получить информацию о пользователе'";
-	}
-	messageCityNotFound() {
-		return `
-😕 *Город не найден*
-
-К сожалению, я не смог найти населённый пункт «*[Введенное пользователем название]*».
-
-*Что можно сделать?*
-• ✏️ *Проверьте написание*. Возможно, в названии есть опечатка.
-• 🧭 *Уточните название*. Используйте официальное название станции или города. Например, не «СПб», а «Санкт-Петербург».
-• 🗺️ *Введите крупный город рядом*. Я ищу станции в основном составе направлений.
-        `.trim();
-	}
 }
-const messageService = new MessageTemplateService();
-export default messageService;

@@ -1,26 +1,27 @@
-import { Context, Markup } from 'telegraf';
+import { InlineKeyboard } from 'grammy';
 import { START } from './consts';
 import { Action } from '../../decorator/action.decorator';
-import { ACTION_BALANCE } from '../balance/consts';
 import { WATCH_ACTION } from '../watch/contst';
+import { ActionContext } from '../../types/bot.interface';
 
-class StartAction {
+export class StartAction {
 	@Action(START)
-	action(ctx: Context) {
-		const { text, buttons } = this.buttons();
-		ctx.reply(text, buttons);
+	async action(ctx: ActionContext) {
+		const { text, reply_markup } = this.buttons();
+		await ctx.reply(text, { reply_markup });
 	}
 
 	buttons() {
+		const inlineKeyboard = new InlineKeyboard()
+			.text('🎯 Начать поиск мест', WATCH_ACTION)
+			.row()
+			.text('❓ Помощь и поддержка', '/help');
 		return {
-			text: 'Привет! Тут ты сможешь оследить свой поезд или электричку',
-			buttons: Markup.inlineKeyboard([
-				Markup.button.callback('Начать поиск', WATCH_ACTION),
-				Markup.button.callback('Баланс', ACTION_BALANCE),
-				Markup.button.callback('Помощь', '/help'),
-			]),
+			text: `
+Привет! 👋 Я знаю всё о свободных местах в электричках! 🚊
+Готов найти тебе идеальное место? Поехали! 💥
+			`.trim(),
+			reply_markup: inlineKeyboard,
 		};
 	}
 }
-const startAction = new StartAction();
-export default startAction;

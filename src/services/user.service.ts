@@ -30,4 +30,3 @@ export class UserRedis extends Redis {
 		return value;
 	}
 }
-export const userRedis = new UserRedis();

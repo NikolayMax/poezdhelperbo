@@ -1,3 +1,0 @@
-For Docker
-redis
-node
