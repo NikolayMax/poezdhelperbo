@@ -1,10 +1,10 @@
-import { getSvrpkTickets } from '../../api';
 import { UserRedis } from '../../services/user.service';
 import { WATCH_PLACE } from './consts';
 import { Action } from '../../decorator/action.decorator';
 import { ITrain } from '../../types/svrpk-train.interface';
 import { TemplateService } from '../../services/message-template.service';
 import { ActionContext } from '../../types/bot.interface';
+import { ApiService } from '../../services/api.service';
 
 interface IScheduleProps {
 	callback: (count: number, stop: () => void) => void;
@@ -16,6 +16,7 @@ export class WatchPlaceAction {
 	constructor(
 		private readonly userRedis: UserRedis,
 		private readonly templateService: TemplateService,
+		private readonly api: ApiService,
 	) {}
 
 	@Action(new RegExp(WATCH_PLACE))
@@ -40,7 +41,7 @@ export class WatchPlaceAction {
 			interval: 15000,
 			duration: 24 * 60 * 60 * 1000,
 			callback: async (_time, stop) => {
-				const trains = await getSvrpkTickets<{ data: ITrain[] }>(
+				const trains = await this.api.getSvrpkTickets<{ data: ITrain[] }>(
 					cityFrom.id,
 					cityTo.id,
 					unixTimestamp.toString(),

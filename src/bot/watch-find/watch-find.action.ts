@@ -1,18 +1,19 @@
 import { InlineKeyboard } from 'grammy';
 import { UserRedis } from '../../services/user.service';
 import { ITrain } from '../../types/svrpk-train.interface';
-import { getSvrpkTickets, searchRzdTickets } from '../../api';
 import { IRzdTrain } from '../../types/rzd-train.interface';
 import { TemplateService } from '../../services/message-template.service';
 import { Action } from '../../decorator/action.decorator';
 import { WATCH_FIND_ACTION } from './consts';
 import { IUserData } from '../../types/user.interface';
 import { ActionContext } from '../../types/bot.interface';
+import { ApiService } from '../../services/api.service';
 
 export class WatchFindAction {
 	constructor(
 		private readonly userRedis: UserRedis,
 		private readonly templateService: TemplateService,
+		private readonly api: ApiService,
 	) {}
 
 	@Action(WATCH_FIND_ACTION)
@@ -57,7 +58,7 @@ export class WatchFindAction {
 		const now = new Date();
 		const date = `${selectedYear}-${(selectedMonth + 1).toString().padStart(2, '0')}-${selectedDay.toString().padStart(2, '0')}`;
 
-		const trains = await searchRzdTickets<{ Trains: IRzdTrain[] }>(
+		const trains = await this.api.searchRzdTickets<{ Trains: IRzdTrain[] }>(
 			cityFrom.id.toString(),
 			cityTo.id.toString(),
 			date,
@@ -66,7 +67,11 @@ export class WatchFindAction {
 			now.getDate() === selectedDay
 				? Math.floor(Date.now() / 1000 + 10)
 				: new Date(selectedYear, selectedMonth, selectedDay).getTime() / 1000;
-		const trains2 = await getSvrpkTickets<{ data: ITrain[] }>(cityFrom.id, cityTo.id, unixTimestamp.toString());
+		const trains2 = await this.api.getSvrpkTickets<{ data: ITrain[] }>(
+			cityFrom.id,
+			cityTo.id,
+			unixTimestamp.toString(),
+		);
 		return trains.Trains.filter((train) => {
 			const trainFind = trains2.data.find((item) => item.number === train.TrainNumber);
 			train.countSeats = trainFind ? trainFind.place_count : 0;
