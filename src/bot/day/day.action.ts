@@ -1,8 +1,8 @@
 import { WatchAction } from '../watch/watch.action';
-import { UserRedis } from '../../services/user.service';
+import { UserRedis } from '../../services';
 import { ACTION_DAY } from './consts';
-import { Action } from '../../decorator/action.decorator';
-import { ActionContext } from '../../types/bot.interface';
+import { Action } from '../../decorator';
+import { ActionContext } from '../../types';
 
 export class DayAction {
 	constructor(

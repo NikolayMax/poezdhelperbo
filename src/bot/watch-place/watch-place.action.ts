@@ -1,10 +1,7 @@
-import { UserRedis } from '../../services/user.service';
+import {UserRedis, TemplateService, ApiService, ErrorService} from '../../services';
 import { WATCH_PLACE } from './consts';
-import { Action } from '../../decorator/action.decorator';
-import { ITrain } from '../../types/svrpk-train.interface';
-import { TemplateService } from '../../services/message-template.service';
-import { ActionContext } from '../../types/bot.interface';
-import { ApiService } from '../../services/api.service';
+import { Action } from '../../decorator';
+import { ActionContext } from '../../types';
 
 interface IScheduleProps {
 	callback: (count: number, stop: () => void) => void;
@@ -17,6 +14,7 @@ export class WatchPlaceAction {
 		private readonly userRedis: UserRedis,
 		private readonly templateService: TemplateService,
 		private readonly api: ApiService,
+        private readonly errorService: ErrorService
 	) {}
 
 	@Action(new RegExp(WATCH_PLACE))
@@ -41,11 +39,15 @@ export class WatchPlaceAction {
 			interval: 15000,
 			duration: 24 * 60 * 60 * 1000,
 			callback: async (_time, stop) => {
-				const trains = await this.api.getSvrpkTickets<{ data: ITrain[] }>(
+				const {data: trains, success} = await this.api.getSvrpkTickets(
 					cityFrom.id,
 					cityTo.id,
 					unixTimestamp.toString(),
 				);
+                if(!success) {
+                    await ctx.reply(this.errorService.serverError());
+                    return;
+                }
 				const findTrain = trains.data.find((train) => train.number === findTrainId);
 
 				if (findTrain?.place_count && findTrain.place_count > 0) {

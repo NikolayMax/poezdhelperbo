@@ -1,8 +1,7 @@
 import { config } from 'dotenv';
 import { BotTelegram } from './bot/bot';
-import { TemplateService } from './services/message-template.service';
-import { UserRedis } from './services/user.service';
-import { ApiService } from './services/api.service';
+import { UserRedis, TemplateService, ApiService, ErrorService, HttpClientService } from './services';
+import {Redis} from "./services";
 
 class App {
 	botTelegram: BotTelegram | undefined;
@@ -20,11 +19,14 @@ class App {
 			return;
 		}
 
-		const userRedis = new UserRedis();
+        const redis = new Redis()
+		const userRedis = new UserRedis(redis);
 		const templateService = new TemplateService(userRedis);
-		const api = new ApiService();
+        const errorService = new ErrorService()
+        const httpClientService = new HttpClientService()
+		const api = new ApiService(httpClientService);
 
-		this.botTelegram = new BotTelegram(parsed.TELEGRAM_KEY, userRedis, templateService, api);
+		this.botTelegram = new BotTelegram(parsed.TELEGRAM_KEY, userRedis, templateService, api, errorService);
 	}
 }
 

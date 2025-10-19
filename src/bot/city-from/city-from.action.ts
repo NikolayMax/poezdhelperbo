@@ -1,8 +1,8 @@
-import { UserRedis } from '../../services/user.service';
+import { UserRedis } from '../../services';
 import { CITY_FROM_ACTION } from './consts';
-import { Action } from '../../decorator/action.decorator';
+import { Action } from '../../decorator';
 import { CurrentSelectCity } from '../select-city/consts';
-import { ActionContext } from '../../types/bot.interface';
+import { ActionContext } from '../../types';
 
 export class CityFromAction {
 	constructor(private readonly userRedis: UserRedis) {}
@@ -28,6 +28,7 @@ export class CityFromAction {
 			});
 		}, 3000);
 	}
+
 	buttons() {
 		return {
 			text: 'Введите город откуда:',

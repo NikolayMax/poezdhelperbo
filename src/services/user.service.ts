@@ -1,8 +1,10 @@
 import { Redis } from './redis.service';
-import { IUserData } from '../types/user.interface';
+import { IUserData } from '../types';
 
-export class UserRedis extends Redis {
-	initData(userId: number) {
+export class UserRedis {
+	constructor(private readonly redis: Redis) {}
+
+    initData(userId: number) {
 		const now = new Date();
 		const userData: IUserData = {
 			selectedDay: now.getDate(),
@@ -17,7 +19,7 @@ export class UserRedis extends Redis {
 	}
 
 	async getData(userId: number): Promise<IUserData> {
-		const userData = await super.get<IUserData>(this.getKey(userId));
+		const userData = await this.redis.get<IUserData>(this.getKey(userId));
 
 		if (!userData) {
 			return this.initData(userId);
@@ -26,7 +28,7 @@ export class UserRedis extends Redis {
 	}
 
 	async setData(userId: number, value: IUserData): Promise<IUserData> {
-		await super.set(this.getKey(userId), value);
+		await this.redis.set(this.getKey(userId), value);
 		return value;
 	}
 }

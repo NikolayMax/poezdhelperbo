@@ -13,12 +13,9 @@ import {
 	Message,
 	WatchPlaceAction,
 } from './';
-import { ActionRegistry } from '../decorator/action.decorator';
-import { CommandRegistry } from '../decorator/command.decorator';
-import { UserRedis } from '../services/user.service';
-import { TemplateService } from '../services/message-template.service';
-import { BotContext, SessionData } from '../types/bot.interface';
-import { ApiService } from '../services/api.service';
+import { ActionRegistry, CommandRegistry } from '../decorator';
+import {UserRedis, TemplateService, ApiService, ErrorService} from '../services';
+import { BotContext, SessionData } from '../types';
 
 function initial(): SessionData {
 	return { messageIds: [] };
@@ -32,6 +29,7 @@ export class BotTelegram {
 		private readonly userRedis: UserRedis,
 		private readonly templateService: TemplateService,
 		private readonly api: ApiService,
+        private readonly errorService: ErrorService
 	) {
 		if (!TELEGRAM_KEY) {
 			console.error('TELEGRAM_KEY: not found');
@@ -46,19 +44,19 @@ export class BotTelegram {
 		new CityFromAction(this.userRedis);
 		new CityToAction(this.userRedis, this.templateService);
 		new MonthAction(this.userRedis);
-		new WatchPlaceAction(this.userRedis, this.templateService, this.api);
-		new WatchFindAction(this.userRedis, this.templateService, this.api);
+		new WatchPlaceAction(this.userRedis, this.templateService, this.api, this.errorService);
+		new WatchFindAction(this.userRedis, this.templateService, this.api, this.errorService);
 		const watchAction = new WatchAction(this.userRedis);
 		const startAction = new StartAction();
 		new StartCommand(startAction);
 		new DayAction(this.userRedis, watchAction);
 		new SelectCityAction(this.userRedis, watchAction);
-		const message = new Message(this.userRedis, this.templateService);
+		const message = new Message(this.userRedis, this.templateService, this.api, this.errorService);
 
 		ActionRegistry.setupBot(this.bot);
 		CommandRegistry.setupBot(this.bot);
 
-		this.bot.on('message:text', message.action.bind(message));
+		this.bot.on('message:text',message.action.bind(message));
 		this.bot
 			.start()
 			.then(() => console.log('START LISTEN APP'))

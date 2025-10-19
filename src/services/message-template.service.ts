@@ -1,7 +1,6 @@
 import { Context } from 'grammy';
 import { UserRedis } from './user.service';
-import { IRzdTrain } from '../types/rzd-train.interface';
-import { ITrain } from '../types/svrpk-train.interface';
+import { ITrain, IRzdTrain } from '../types';
 
 export class TemplateService {
 	constructor(private readonly userRedis: UserRedis) {}
@@ -9,11 +8,11 @@ export class TemplateService {
 	userDataError() {
 		return "'Не удалось получить информацию о пользователе'";
 	}
-	messageCityNotFound() {
+	messageCityNotFound(message: string) {
 		return `
 😕 *Город не найден*
 
-К сожалению, я не смог найти населённый пункт «*[Введенное пользователем название]*».
+К сожалению, я не смог найти населённый пункт «${message}».
 
 *Что можно сделать?*
 • ✏️ *Проверьте написание*. Возможно, в названии есть опечатка.
@@ -105,7 +104,7 @@ ${seatsMessage}
 			return '❌ Мест нет';
 		}
 
-		return `▫️ ${typeof count === 'number' ? count : 0} мест •`;
+		return `▫️ ${count} мест •`;
 	}
 
 	generateDetailedTrainMessage(train: IRzdTrain) {
