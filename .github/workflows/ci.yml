@@ -1,0 +1,26 @@
+name: CI Pipline
+
+on:
+  push:
+    branches:
+      - master
+      - feature
+
+jobs:
+  hello-world:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Print greeting
+        run: echo "Hello, CI/CD!"
+
+      - name: Show Node.js version
+        run: node --version
