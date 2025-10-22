@@ -1,14 +1,13 @@
 import { InlineKeyboard } from 'grammy';
-import { UserRedis } from '../../services/user.service';
-import { Action } from '../../decorator/action.decorator';
+import { UserRedis } from '../../services';
+import { Action } from '../../decorator';
 import { WATCH_ACTION } from './contst';
 import { CITY_FROM_ACTION } from '../city-from/consts';
 import { CITY_TO_ACTION } from '../city-to/consts';
 import { START } from '../start/consts';
 import { WATCH_DATE } from '../watch-date/consts';
 import { WATCH_FIND_ACTION } from '../watch-find/consts';
-import { IUserData } from '../../types/user.interface';
-import { ActionContext } from '../../types/bot.interface';
+import { IUserData, ActionContext } from '../../types';
 
 export class WatchAction {
 	constructor(private readonly userRedis: UserRedis) {}
@@ -16,16 +15,11 @@ export class WatchAction {
 	@Action(WATCH_ACTION)
 	async action(ctx: ActionContext) {
 		const { text, reply_markup } = await this.buttons(ctx);
-		await ctx.reply(text, { reply_markup });
+		const message = await ctx.reply(text, { reply_markup });
+        ctx.session.messageIds.push(message.message_id);
 	}
 
 	async buttons(ctx: ActionContext) {
-		if (!ctx.from) {
-			return {
-				text: 'Не удалось получить информацию о пользователе',
-				reply_markup: new InlineKeyboard(),
-			};
-		}
 		const userId = ctx.from.id;
 		const userData = await this.userRedis.getData(userId);
 		const inlineKeyboard = new InlineKeyboard()

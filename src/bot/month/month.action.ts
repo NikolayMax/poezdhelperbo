@@ -1,8 +1,8 @@
 import { InlineKeyboard } from 'grammy';
-import { UserRedis } from '../../services/user.service';
-import { Action } from '../../decorator/action.decorator';
+import { UserRedis } from '../../services';
+import { Action } from '../../decorator';
 import { MONTH_ACTION } from './consts';
-import { ActionContext } from '../../types/bot.interface';
+import { ActionContext } from '../../types';
 
 export class MonthAction {
 	constructor(private readonly userRedis: UserRedis) {}
@@ -16,7 +16,8 @@ export class MonthAction {
 
 		const { text, reply_markup } = await this.buttons(ctx);
 
-		await ctx.reply(text, { reply_markup });
+		const message = await ctx.reply(text, { reply_markup });
+        ctx.session.messageIds.push(message.message_id);
 	}
 	async buttons(ctx: ActionContext) {
 		const now = new Date();
@@ -37,6 +38,7 @@ export class MonthAction {
 			reply_markup: inlineKeyboard,
 		};
 	}
+
 	getLastDayOfMonth(year: number, month: number) {
 		return new Date(year, month + 1, 0).getDate();
 	}

@@ -1,8 +1,8 @@
 import { WatchAction } from '../watch/watch.action';
-import { UserRedis } from '../../services/user.service';
-import { Action } from '../../decorator/action.decorator';
+import { UserRedis } from '../../services';
+import { Action } from '../../decorator';
 import { CurrentSelectCity, SELECT_CITY } from './consts';
-import { ActionContext } from '../../types/bot.interface';
+import { ActionContext } from '../../types';
 
 export class SelectCityAction {
 	constructor(
@@ -23,9 +23,13 @@ export class SelectCityAction {
 			userData.cityTo = currentCity;
 		}
 
+        userData.cities = []
+        userData.currentSelectCity = undefined;
+
 		await this.userRedis.setData(userId, userData);
 
 		const { text, reply_markup } = await this.watchAction.buttons(ctx);
-		await ctx.reply(text, { reply_markup });
+		const message = await ctx.reply(text, { reply_markup });
+        ctx.session.messageIds.push(message.message_id);
 	}
 }

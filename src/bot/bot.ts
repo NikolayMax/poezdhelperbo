@@ -1,4 +1,5 @@
-import { Bot, session, NextFunction } from 'grammy';
+import {Bot, session} from 'grammy';
+import { RedisAdapter } from "@grammyjs/storage-redis";
 import {
 	StartCommand,
 	StartAction,
@@ -12,70 +13,69 @@ import {
 	DayAction,
 	Message,
 	WatchPlaceAction,
+    WatchActiveAction,
+    WatchCancelAction
 } from './';
 import { ActionRegistry, CommandRegistry } from '../decorator';
-import {UserRedis, TemplateService, ApiService, ErrorService} from '../services';
+import {UserRedis, TemplateService, ApiService, ErrorService, Redis, ScheduleService, MiddlewareService,TrainService} from '../services';
 import { BotContext, SessionData } from '../types';
 
-function initial(): SessionData {
-	return { messageIds: [] };
-}
 
 export class BotTelegram {
-	private readonly bot: Bot<BotContext> | undefined;
-
 	constructor(
-		TELEGRAM_KEY: string | undefined,
+		private readonly bot: Bot<BotContext>,
+        private readonly redis: Redis,
 		private readonly userRedis: UserRedis,
 		private readonly templateService: TemplateService,
 		private readonly api: ApiService,
-        private readonly errorService: ErrorService
+        private readonly errorService: ErrorService,
+        private readonly scheduleService: ScheduleService,
+        private readonly middleware: MiddlewareService,
+        private readonly trainService: TrainService
 	) {
-		if (!TELEGRAM_KEY) {
-			console.error('TELEGRAM_KEY: not found');
-			return;
-		}
+        const storage = new RedisAdapter({
+            instance: this.redis.getClient(),
+        });
+        this.bot.use(
+            session({
+                initial: this.initial,
+                storage,
+                getSessionKey: (ctx) => {
+                    // Ключом будет ID пользователя
+                    return ctx.from?.id.toString();
+                }
+            })
+        );
+        this.bot.use(this.middleware.action.bind(this.middleware));
 
-		this.bot = new Bot<BotContext>(TELEGRAM_KEY);
-		this.bot.use(session({ initial }));
-		this.bot.use(this.middleware);
+        new WatchDateAction(this.userRedis);
+        new CityFromAction(this.userRedis);
+        new CityToAction(this.userRedis);
+        new MonthAction(this.userRedis);
+        new WatchPlaceAction(this.userRedis, this.templateService, this.scheduleService, this.trainService);
+        new WatchFindAction(this.userRedis, this.templateService, this.api, this.errorService, this.trainService);
+        const watchAction = new WatchAction(this.userRedis);
+        const startAction = new StartAction();
+        new StartCommand(startAction);
+        new DayAction(this.userRedis, watchAction);
+        new SelectCityAction(this.userRedis, watchAction);
+        const message = new Message(this.userRedis, this.templateService, this.api, this.errorService);
+        new WatchActiveAction(this.userRedis, this.scheduleService)
+        new WatchCancelAction(this.userRedis, this.scheduleService)
 
-		new WatchDateAction(this.userRedis);
-		new CityFromAction(this.userRedis);
-		new CityToAction(this.userRedis, this.templateService);
-		new MonthAction(this.userRedis);
-		new WatchPlaceAction(this.userRedis, this.templateService, this.api, this.errorService);
-		new WatchFindAction(this.userRedis, this.templateService, this.api, this.errorService);
-		const watchAction = new WatchAction(this.userRedis);
-		const startAction = new StartAction();
-		new StartCommand(startAction);
-		new DayAction(this.userRedis, watchAction);
-		new SelectCityAction(this.userRedis, watchAction);
-		const message = new Message(this.userRedis, this.templateService, this.api, this.errorService);
+        ActionRegistry.setupBot(this.bot);
+        CommandRegistry.setupBot(this.bot);
 
-		ActionRegistry.setupBot(this.bot);
-		CommandRegistry.setupBot(this.bot);
+        this.bot.on('message:text',message.action.bind(message));
+        this.bot
+            .start()
+            .then(() => console.log('START LISTEN APP'))
+            .catch((e) => console.error(e));
 
-		this.bot.on('message:text',message.action.bind(message));
-		this.bot
-			.start()
-			.then(() => console.log('START LISTEN APP'))
-			.catch((e) => console.error(e));
-	}
+        scheduleService.startScheduler();
+    }
 
-	middleware(ctx: BotContext, next: NextFunction) {
-		if (ctx.session.messageIds.length > 0 && ctx.chat?.id) {
-			let messageId;
-			while ((messageId = ctx.session.messageIds.pop())) {
-				ctx.api.deleteMessage(ctx.chat?.id, messageId);
-			}
-		} else {
-			try {
-				ctx.deleteMessage();
-			} catch (e) {
-				console.log(e);
-			}
-		}
-		return next();
-	}
+    initial(): SessionData {
+        return { messageIds: [] };
+    }
 }

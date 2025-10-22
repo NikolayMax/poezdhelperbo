@@ -1,5 +1,5 @@
 import { Bot } from 'grammy';
-import { BotContext } from '../types/bot.interface';
+import { BotContext } from '../types';
 
 export class CommandRegistry {
 	private static commands: Map<string, (ctx: BotContext) => void> = new Map();

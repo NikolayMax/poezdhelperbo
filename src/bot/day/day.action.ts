@@ -8,7 +8,7 @@ export class DayAction {
 	constructor(
 		private readonly userRedis: UserRedis,
 		private readonly watchAction: WatchAction,
-	) {}
+	) { }
 
 	@Action(new RegExp(ACTION_DAY))
 	async action(ctx: ActionContext) {
@@ -19,6 +19,7 @@ export class DayAction {
 		await this.userRedis.setData(userId, userData);
 
 		const { text, reply_markup } = await this.watchAction.buttons(ctx);
-		await ctx.reply(text, { reply_markup });
+		const message = await ctx.reply(text, { reply_markup });
+		ctx.session.messageIds.push(message.message_id);
 	}
 }

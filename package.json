@@ -8,21 +8,17 @@
 		"start": "node dist/app.js",
 		"dev": "tsx watch src/app.ts",
 		"build:storybook": "node ./scripts/storybook.js",
-
-        "test": "jest",
-        "test:unit": "jest --config jest.unit.config.js",
-        "test:integration": "jest --config jest.integration.config.js",
-        "test:e2e": "jest --config jest.e2e.config.js",
-        "test:ci": "npm run test:unit && npm run test:integration",
-        "test:watch": "jest --watchAll",
-        "test:coverage": "jest --coverage",
-
+		"test": "jest",
+		"test:unit": "jest --config jest.unit.config.js",
+		"test:integration": "jest --config jest.integration.config.js",
+		"test:e2e": "jest --config jest.e2e.config.js",
+		"test:ci": "npm run test:unit && npm run test:integration",
+		"test:watch": "jest --watchAll",
+		"test:coverage": "jest --coverage",
 		"lint": "eslint .",
 		"lint:fix": "eslint . --fix",
-
-        "format": "prettier . --write",
-
-        "type:check": "node ./scripts/typecheck.js",
+		"format": "prettier . --write",
+		"type:check": "node ./scripts/typecheck.js",
 		"i18n:check": "node ./scripts/i18n-check.js"
 	},
 	"keywords": [],
@@ -30,6 +26,7 @@
 	"license": "ISC",
 	"type": "commonjs",
 	"devDependencies": {
+		"@types/ioredis": "^5.0.0",
 		"@types/jest": "^30.0.0",
 		"@types/node": "^24.8.1",
 		"jest": "^30.2.0",
@@ -39,8 +36,9 @@
 		"typescript": "^5.9.3"
 	},
 	"dependencies": {
+		"@grammyjs/storage-redis": "^2.5.1",
 		"dotenv": "^17.2.3",
 		"grammy": "^1.38.3",
-		"redis": "^5.8.3"
+		"ioredis": "^5.8.1"
 	}
 }

@@ -1,0 +1,1 @@
+export const WATCH_ACTIVE = 'watch-active';

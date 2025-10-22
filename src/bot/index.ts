@@ -10,3 +10,5 @@ export * from './watch-place/watch-place.action';
 export * from './start/start.command';
 export * from './start/start.action';
 export * from './message/message';
+export * from "./watch-active/watch-active.action";
+export * from "./watch-cancel/watch-cancel.action";

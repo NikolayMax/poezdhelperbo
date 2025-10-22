@@ -29,7 +29,7 @@ describe('class Message', () => {
     let now: Date = new Date();
 
     beforeEach(() => {
-        redis = new Redis();
+        redis = new Redis('');
         userRedis = new UserRedis(redis)
         const httpClientService = new HttpClientService();
         errorService = new ErrorService()

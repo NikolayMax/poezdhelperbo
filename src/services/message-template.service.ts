@@ -1,13 +1,11 @@
 import { Context } from 'grammy';
 import { UserRedis } from './user.service';
-import { ITrain, IRzdTrain } from '../types';
+import { IUserData, ITrainSchedule } from '../types';
+
 
 export class TemplateService {
-	constructor(private readonly userRedis: UserRedis) {}
+	constructor(private readonly userRedis: UserRedis) { }
 
-	userDataError() {
-		return "'Не удалось получить информацию о пользователе'";
-	}
 	messageCityNotFound(message: string) {
 		return `
 😕 *Город не найден*
@@ -21,57 +19,11 @@ export class TemplateService {
         `.trim();
 	}
 
-	async messageFindPlace(ctx: Context) {
-		if (!ctx.from) {
-			return 'Не удалось получить информацию о пользователе';
-		}
-
-		const userId = ctx.from.id;
-		const { selectedYear, selectedMonth, selectedDay, cityFrom, cityTo } = await this.userRedis.getData(userId);
-		if (!cityFrom) {
-			return this.noDepartureCity();
-		}
-		if (!cityTo) {
-			return this.noArrivalCity();
-		}
-
-		return `
-🔍 *Поиск места активирован*
-
-Ваш запрос принят в работу! Теперь мы будем автоматически проверять наличие мест для вас в течение *24 часов*.
-
-*Детали запроса:*
-• 🚆 Направление: [${cityFrom?.name}] — [${cityTo?.name}]
-• 📅 Дата: [${selectedDay}.${selectedMonth + 1}.${selectedYear}]
-
-Как только свободное место будет найдено, вы получите уведомление в этом чате.
-
-*Ожидайте обновлений!* ⏳
-        `.trim();
-	}
 	noDepartureCity() {
 		return '📍 *Не выбран город отправления*...';
 	}
 	noArrivalCity() {
 		return '🎯 *Не выбран город назначения*...';
-	}
-	generateDetailedFindTrainMessage(train: ITrain) {
-		const seatsMessage = this.generateSeatsMessage(train.place_count);
-
-		return `
-‼️‼️‼️<b>НАШЛОСЬ МЕСТО</b>‼️‼️‼️
-🚂 <b>Поезд ${train.number}</b>${train.name ? ` - ${train.name}` : ''}
-
-📅 <b>Дата:</b> ${train.departure_data.date}
-🕒 <b>Время:</b> ${train.departure_data.time} → ${train.arrival_data.time}
-⏱ <b>В пути:</b> ${train.travel_time}
-
-🏁 <b>Станции:</b>
-▫️ Отправление: ${train.departure_data.station}
-▫️ Прибытие: ${train.arrival_data.station}
-
-${seatsMessage}
-        `.trim();
 	}
 
 	async messageNotFoundTrains(ctx: Context) {
@@ -99,49 +51,30 @@ ${seatsMessage}
         `.trim();
 	}
 
-	generateSeatsMessage(count: number) {
-		if (count < 1) {
+	generateSeatsMessage(count: number | null) {
+		if (!count || count < 1) {
 			return '❌ Мест нет';
 		}
 
 		return `▫️ ${count} мест •`;
 	}
 
-	generateDetailedTrainMessage(train: IRzdTrain) {
-		// Форматируем время в пути
-		const tripDurationHours = Math.floor(train.TripDuration / 60);
-		const tripDurationMinutes = train.TripDuration % 60;
-		const travelTime = `${tripDurationHours}ч ${tripDurationMinutes}м`;
+	async generateDetailedTrainMessage(train: ITrainSchedule, date: string, userData: Pick<IUserData, 'cityFrom' | 'cityTo'>, isPlace: boolean = false) {
+		const { cityFrom, cityTo } = userData;
 
-		// Форматируем дату и время
-		const departureDate = new Date(train.LocalDepartureDateTime).toLocaleDateString('ru-RU');
-		const departureTime = new Date(train.LocalDepartureDateTime).toLocaleTimeString('ru-RU', {
-			hour: '2-digit',
-			minute: '2-digit',
-		});
-		const arrivalTime = new Date(train.LocalArrivalDateTime).toLocaleTimeString('ru-RU', {
-			hour: '2-digit',
-			minute: '2-digit',
-		});
-
-		// Генерируем сообщение о местах
-		const seatsMessage = this.generateSeatsMessage(train.countSeats);
+		const seatsMessage = this.generateSeatsMessage(train.places_count);
 
 		return `
-🚂 <b>Поезд ${train.TrainNumber}</b>${train.TrainName ? ` - ${train.TrainName}` : ''}
+${isPlace ? '‼️‼️‼️<b>НАШЛОСЬ МЕСТО</b>‼️‼️‼️' : ''}
+🚂 <b>Поезд ${train.train_number}</b>${train.name ? ` - ${train.name}` : ''}
 
-📅 <b>Дата:</b> ${departureDate}
-🕒 <b>Время:</b> ${departureTime} → ${arrivalTime}
-⏱ <b>В пути:</b> ${travelTime}
-📏 <b>Расстояние:</b> ${train.TripDistance} км
+📅 <b>Дата:</b> ${date}
+🕒 <b>Время:</b> ${train.departure_time} → ${train.arrival_time}
 
 🏁 <b>Станции:</b>
-▫️ Отправление: ${train.OriginName}
-▫️ Прибытие: ${train.DestinationName}
+▫️ Отправление: ${cityFrom?.name}
+▫️ Прибытие: ${cityTo?.name}
 
-🚉 <b>Маршрут:</b>
-▫️ Начальная: ${train.InitialStationName}
-▫️ Конечная: ${train.FinalStationName}
 
 ${seatsMessage}
         `.trim();

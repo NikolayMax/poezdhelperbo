@@ -1,7 +1,16 @@
 import { ICity } from './city.interface';
 import { CurrentSelectCity } from '../bot/select-city/consts';
+import { TKeyRoute } from "./schedule.interface";
+
+
+export interface IUserSchedule {
+	routeId: TKeyRoute;
+	startTime: string; // ISO string
+	spentSeconds: number;
+}
 
 export interface IUserData {
+	chatId?: number;
 	selectedYear: number;
 	selectedMonth: number;
 	selectedDay: number;
@@ -10,5 +19,7 @@ export interface IUserData {
 	cityTo?: ICity;
 
 	currentSelectCity?: CurrentSelectCity;
-	cities?: ICity[];
+	cities: ICity[];
+	activeSchedules: IUserSchedule[];
+    messageIds: number[]
 }
