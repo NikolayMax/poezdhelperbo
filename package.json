@@ -4,7 +4,7 @@
 	"description": "",
 	"main": "src/app.ts",
 	"scripts": {
-		"build": "",
+		"build": "tsc",
 		"start": "node dist/app.js",
 		"dev": "tsx watch src/app.ts",
 		"build:storybook": "node ./scripts/storybook.js",
