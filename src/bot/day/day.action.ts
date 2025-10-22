@@ -8,7 +8,7 @@ export class DayAction {
 	constructor(
 		private readonly userRedis: UserRedis,
 		private readonly watchAction: WatchAction,
-	) { }
+	) {}
 
 	@Action(new RegExp(ACTION_DAY))
 	async action(ctx: ActionContext) {

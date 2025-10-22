@@ -16,7 +16,7 @@ export class WatchAction {
 	async action(ctx: ActionContext) {
 		const { text, reply_markup } = await this.buttons(ctx);
 		const message = await ctx.reply(text, { reply_markup });
-        ctx.session.messageIds.push(message.message_id);
+		ctx.session.messageIds.push(message.message_id);
 	}
 
 	async buttons(ctx: ActionContext) {

@@ -1,28 +1,27 @@
 {
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "CommonJS",
-    "outDir": "dist",
-    "rootDir": "./src",
+	"compilerOptions": {
+		"target": "ES2022",
+		"module": "CommonJS",
+		"outDir": "dist",
+		"rootDir": "./src",
 
-    /* Строгость */
-    "strict": true,
-    "noImplicitReturns": true,
-    "noUncheckedIndexedAccess": true,
-    "noUnusedLocals": true,
-    "noUnusedParameters": true,
+		/* Строгость */
+		"strict": true,
+		"noImplicitReturns": true,
+		"noUncheckedIndexedAccess": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
 
-    /* Модули */
-    "esModuleInterop":true,
-    "allowSyntheticDefaultImports": true,
+		/* Модули */
+		"esModuleInterop": true,
+		"allowSyntheticDefaultImports": true,
 
-    /* Продакшен настройки */
-    "removeComments": false,
-    "noEmitOnError": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
-
-  },
-  "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "coverage"]
+		/* Продакшен настройки */
+		"removeComments": false,
+		"noEmitOnError": true,
+		"skipLibCheck": true,
+		"forceConsistentCasingInFileNames": true
+	},
+	"include": ["src/**/*"],
+	"exclude": ["node_modules", "dist", "coverage"]
 }

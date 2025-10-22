@@ -3,22 +3,22 @@ import { START } from './consts';
 import { Action } from '../../decorator';
 import { WATCH_ACTION } from '../watch/contst';
 import { ActionContext } from '../../types';
-import {WATCH_ACTIVE} from "../watch-active/consts";
+import { WATCH_ACTIVE } from '../watch-active/consts';
 
 export class StartAction {
 	@Action(START)
 	async action(ctx: ActionContext) {
 		const { text, reply_markup } = this.buttons();
 		const message = await ctx.reply(text, { reply_markup });
-        ctx.session.messageIds.push(message.message_id);
+		ctx.session.messageIds.push(message.message_id);
 	}
 
 	buttons() {
 		const inlineKeyboard = new InlineKeyboard()
 			.text('🎯 Начать поиск мест', WATCH_ACTION)
 			.row()
-            .text('🚊 Список активных поисков', WATCH_ACTIVE)
-            .row()
+			.text('🚊 Список активных поисков', WATCH_ACTIVE)
+			.row()
 			.text('❓ Помощь и поддержка', '/help');
 		return {
 			text: `

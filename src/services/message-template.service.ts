@@ -2,9 +2,8 @@ import { Context } from 'grammy';
 import { UserRedis } from './user.service';
 import { IUserData, ITrainSchedule } from '../types';
 
-
 export class TemplateService {
-	constructor(private readonly userRedis: UserRedis) { }
+	constructor(private readonly userRedis: UserRedis) {}
 
 	messageCityNotFound(message: string) {
 		return `
@@ -59,7 +58,12 @@ export class TemplateService {
 		return `▫️ ${count} мест •`;
 	}
 
-	async generateDetailedTrainMessage(train: ITrainSchedule, date: string, userData: Pick<IUserData, 'cityFrom' | 'cityTo'>, isPlace: boolean = false) {
+	async generateDetailedTrainMessage(
+		train: ITrainSchedule,
+		date: string,
+		userData: Pick<IUserData, 'cityFrom' | 'cityTo'>,
+		isPlace: boolean = false,
+	) {
 		const { cityFrom, cityTo } = userData;
 
 		const seatsMessage = this.generateSeatsMessage(train.places_count);

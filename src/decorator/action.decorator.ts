@@ -16,7 +16,7 @@ export class ActionRegistry {
 }
 
 export function Action(actionName: string | RegExp) {
-    return function <This, Return>(
+	return function <This, Return>(
 		_target: (this: This, ctx: ActionContext) => Return,
 		context: ClassMethodDecoratorContext<This, (ctx: ActionContext) => void>,
 	) {

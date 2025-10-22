@@ -4,9 +4,8 @@ import { Action } from '../../decorator';
 import { CurrentSelectCity } from '../select-city/consts';
 import { ActionContext } from '../../types';
 
-
 export class CityFromAction {
-	constructor(private readonly userRedis: UserRedis) { }
+	constructor(private readonly userRedis: UserRedis) {}
 
 	@Action(CITY_FROM_ACTION)
 	async action(ctx: ActionContext) {

@@ -1,6 +1,5 @@
 import IORedis from 'ioredis';
 
-
 export class Redis {
 	private client: IORedis;
 
@@ -10,7 +9,7 @@ export class Redis {
 	}
 
 	getClient() {
-		return this.client
+		return this.client;
 	}
 
 	async set<T extends string | object>(key: string, value: T) {

@@ -23,13 +23,13 @@ export class SelectCityAction {
 			userData.cityTo = currentCity;
 		}
 
-        userData.cities = []
-        userData.currentSelectCity = undefined;
+		userData.cities = [];
+		userData.currentSelectCity = undefined;
 
 		await this.userRedis.setData(userId, userData);
 
 		const { text, reply_markup } = await this.watchAction.buttons(ctx);
 		const message = await ctx.reply(text, { reply_markup });
-        ctx.session.messageIds.push(message.message_id);
+		ctx.session.messageIds.push(message.message_id);
 	}
 }

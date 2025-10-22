@@ -15,14 +15,11 @@
 		"test:ci": "npm run test:unit && npm run test:integration",
 		"test:watch": "jest --watchAll",
 		"test:coverage": "jest --coverage",
-
-        "lint": "eslint .",
+		"lint": "eslint .",
 		"lint:fix": "eslint . --fix",
-
-        "format": "prettier . --write",
-        "format:check": "prettier . --check",
-
-        "type:check": "node ./scripts/typecheck.js",
+		"format:fix": "prettier . --write",
+		"format:check": "prettier . --check",
+		"type:check": "node ./scripts/typecheck.js",
 		"i18n:check": "node ./scripts/i18n-check.js"
 	},
 	"keywords": [],

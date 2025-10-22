@@ -1,7 +1,6 @@
 import { ICity } from './city.interface';
 import { CurrentSelectCity } from '../bot/select-city/consts';
-import { TKeyRoute } from "./schedule.interface";
-
+import { TKeyRoute } from './schedule.interface';
 
 export interface IUserSchedule {
 	routeId: TKeyRoute;
@@ -21,5 +20,5 @@ export interface IUserData {
 	currentSelectCity?: CurrentSelectCity;
 	cities: ICity[];
 	activeSchedules: IUserSchedule[];
-    messageIds: number[]
+	messageIds: number[];
 }

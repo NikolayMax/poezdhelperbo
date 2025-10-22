@@ -1,20 +1,18 @@
-import { Redis } from "./redis.service";
-import { ITrainSchedule } from "../types";
-
+import { Redis } from './redis.service';
+import { ITrainSchedule } from '../types';
 
 export class TrainService {
+	constructor(private readonly redis: Redis) {}
 
-    constructor(private readonly redis: Redis) { }
+	getKey(userId: number): `trains:${number}` {
+		return `trains:${userId}`;
+	}
 
-    getKey(userId: number): `trains:${number}` {
-        return `trains:${userId}`;
-    }
+	async setTrains(userId: number, trains: ITrainSchedule[]) {
+		await this.redis.set<ITrainSchedule[]>(this.getKey(userId), trains);
+	}
 
-    async setTrains(userId: number, trains: ITrainSchedule[]) {
-        await this.redis.set<ITrainSchedule[]>(this.getKey(userId), trains)
-    }
-
-    async getTrains(userId: number) {
-        return await this.redis.get<ITrainSchedule[]>(this.getKey(userId)) || [];
-    }
+	async getTrains(userId: number) {
+		return (await this.redis.get<ITrainSchedule[]>(this.getKey(userId))) || [];
+	}
 }

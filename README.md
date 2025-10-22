@@ -1,6 +1,6 @@
 # 🤖 Telegram Bot
 
-<div align="center">
+<div>
 
 ![Telegram](https://img.shields.io/badge/Telegram-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
@@ -10,7 +10,7 @@
 
 Мощный и масштабируемый Telegram бот с современным стеком технологий
 
-[Установка](#-установка) • [Запуск](#-запуск) • [Конфигурация](#️-конфигурация)
+[Установка](#-установка) • [Запуск](#-запуск) • [Конфигурация]
 
 </div>
 
@@ -31,11 +31,14 @@
 - **Docker** и **Docker Compose** (рекомендуется)
 
 ### Настройте окружение
+
 ```shell
 # Создайте файл .env из примера
 cp .env.example .env
 ```
+
 ### Отредактируйте файл .env
+
 ```dotenv
 # Обязательные переменные
 TELEGRAM_KEY=your_bot_token_here
@@ -45,30 +48,38 @@ REDIS_URL=redis://bot-redis:6379
 NODE_ENV=development
 LOG_LEVEL=info
 ```
+
 ### 📥 Установка
 
 1. **Клонируйте репозиторий**
+
 ```shell
 git clone <your-repo-url>
 cd telegram-bot
 ```
-###  🐳 Запуск с Docker
+
+### 🐳 Запуск с Docker
+
 1. **Простой запуск (рекомендуется)**
+
 ```shell
 docker-compose up -d
 ```
 
 2. **Сборка с обновлениями**
+
 ```shell
 docker-compose up --build -d
 ```
 
 3. **Остановка**
+
 ```shell
 docker-compose down
 ```
 
 4**Просмотр логов**
+
 ```shell
 docker-compose logs -f bot
 ```
@@ -76,15 +87,18 @@ docker-compose logs -f bot
 ### 🏃 Запуск
 
 1. **Development режим**
+
 ```shell
 npm run dev
 ```
 
 2. **Production режим**
+
 ```shell
 npm run build
 npm start
 ```
+
 ## ⚙️ Конфигурация
 
 - ⚡ Найдите @BotFather в Telegram
