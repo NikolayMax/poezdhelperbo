@@ -4,10 +4,9 @@ on:
     push:
         branches:
             - master
-            - feature
 
 jobs:
-    hello-world:
+    build-and-tests:
         runs-on: ubuntu-latest
 
         steps:
@@ -31,8 +30,14 @@ jobs:
             - name: Run test
               run: npm test
 
-            - name: Print greeting
-              run: echo "Hello, CI/CD!"
+            - name: Build project
+              run: npm run build
 
-            - name: Show Node.js version
-              run: node --version
+            - name: Upload build artifacts
+              uses: actions/upload-artifact@v4
+              with:
+                name: build-output
+                path: |
+                  dist/
+                  build/
+                if-no-files-found: ignore
