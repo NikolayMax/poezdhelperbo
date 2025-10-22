@@ -12,7 +12,7 @@ export class WatchCancelAction {
 	@Action(new RegExp(WATCH_CANCEL))
 	async action(ctx: ActionContext) {
 		const userId = ctx.from.id;
-		const [_train, trainNumber, fromId, toId, date] = ctx.match;
+		const [, trainNumber, fromId, toId, date] = ctx.match;
 		const userData = await this.userRedis.getData(userId);
 
 		if (!trainNumber || !fromId || !toId || !date) {

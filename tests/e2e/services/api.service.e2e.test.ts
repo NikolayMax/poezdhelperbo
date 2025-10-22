@@ -3,7 +3,7 @@ import { ApiService, HttpClientService } from '../../../src/services';
 describe('class ApiService (Челябинская область) Ласточка Челябинск-Магнитогорск(7905)', () => {
 	let api: ApiService;
 	let httpClientService: HttpClientService;
-	let mockRoutes = ['Челябинск', 'Троицк', 'Тамерлан', 'Карталы', 'Магнитогорск'];
+	const mockRoutes = ['Челябинск', 'Троицк', 'Тамерлан', 'Карталы', 'Магнитогорск'];
 
 	beforeEach(() => {
 		httpClientService = new HttpClientService();
@@ -21,7 +21,7 @@ describe('class ApiService (Челябинская область) Ласточ�
 describe('class ApiService (Челябинская область) Ласточка Челябинск-Екатеринбург', () => {
 	let api: ApiService;
 	let httpClientService: HttpClientService;
-	let mockRoutes = [
+	const mockRoutes = [
 		'Челябинск',
 		'МУСЛЮМОВО',
 		'НИЖНЯЯ',
@@ -52,7 +52,7 @@ describe('class ApiService (Челябинская область) Ласточ�
 describe('class ApiService (Челябинская область) Ласточка Екатеринбург-Челябинск(7026/7006)', () => {
 	let api: ApiService;
 	let httpClientService: HttpClientService;
-	let mockRoutes = [
+	const mockRoutes = [
 		'ЕКАТЕРИНБУРГ',
 		'ПЕРВОМАЙСКАЯ',
 		'БОТАНИЧЕСКАЯ',
@@ -78,7 +78,7 @@ describe('class ApiService (Челябинская область) Ласточ�
 describe('class ApiService (Челябинская область) Ласточка Челябинск - Екатеринбург(7007/7027) отп. 13:42', () => {
 	let api: ApiService;
 	let httpClientService: HttpClientService;
-	let mockRoutes = [
+	const mockRoutes = [
 		'ЧЕЛЯБИНСК',
 		'ОП 236 КМ',
 		'АРГАЯШ',

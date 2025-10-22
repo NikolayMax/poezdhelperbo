@@ -4,7 +4,7 @@ import { IUserData } from '../../../src/types';
 describe('UserRedis Integration', () => {
 	let redis: Redis;
 	let userRedis: UserRedis;
-	let ctxMock = {
+	const ctxMock = {
 		from: { id: 12 },
 	};
 	beforeEach(() => {

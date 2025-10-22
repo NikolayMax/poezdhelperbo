@@ -3,7 +3,7 @@ import { IUserData } from '../../../src/types';
 
 describe('Redis Integration', () => {
 	let redis: Redis;
-	let ctxMock = {
+	const ctxMock = {
 		from: { id: 12 },
 	};
 	beforeEach(() => {
