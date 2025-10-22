@@ -1,0 +1,6 @@
+export * from './http-client.interface';
+export * from './city.interface';
+export * from './bot.interface';
+export * from './user.interface';
+export * from './train-schedule.interface';
+export * from './schedule.interface';

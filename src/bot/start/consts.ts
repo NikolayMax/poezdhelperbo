@@ -1,1 +1,1 @@
-export const START = '/start';
+export const START = 'start';

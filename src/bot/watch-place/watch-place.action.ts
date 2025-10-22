@@ -1,53 +1,53 @@
-import { Context } from 'telegraf';
-import { addSchedule } from '../../utils/schedule';
-import { getSvrpkTickets } from '../../api';
-import { userRedis } from '../../services/user.service';
-import messageService from '../../services/message-template.service';
+import { UserRedis, TemplateService, ScheduleService, TrainService } from '../../services';
 import { WATCH_PLACE } from './consts';
-import { Action } from '../../decorator/action.decorator';
-import { ITrain } from '../../types/svrpk-train.interface';
+import { Action } from '../../decorator';
+import { ActionContext } from '../../types';
 
-class WatchPlaceAction {
+export class WatchPlaceAction {
+	constructor(
+		private readonly userRedis: UserRedis,
+		private readonly templateService: TemplateService,
+		private readonly scheduleService: ScheduleService,
+		private readonly trainService: TrainService,
+	) {}
+
 	@Action(new RegExp(WATCH_PLACE))
-	async action(ctx: Context) {
-		if (!('match' in ctx)) {
-			return ctx.reply('Error: match not found in ctx');
-		}
-		const findTrainId = (ctx.match as string[])[1];
-		if (!ctx.from) {
-			return ctx.reply(messageService.userDataError());
-		}
-
+	async action(ctx: ActionContext) {
+		const chatId = ctx.chat?.id;
+		const trainNumber = +(ctx.match[1] as string);
 		const userId = ctx.from.id;
-		const { selectedYear, selectedMonth, selectedDay, cityFrom, cityTo } = await userRedis.getData(userId);
+		const trains = await this.trainService.getTrains(userId);
+		const userData = await this.userRedis.getData(userId);
+		const { selectedYear, selectedMonth, selectedDay, cityFrom, cityTo } = userData;
+		const findTrain = trains.find((train) => train.train_number === `${trainNumber}`);
 
 		if (!cityFrom) {
-			return messageService.noDepartureCity();
+			const message = await ctx.reply(this.templateService.noDepartureCity());
+			ctx.session.messageIds.push(message.message_id);
+			return;
 		}
-		if (!cityTo) {
-			return messageService.noArrivalCity();
+		if (!cityTo || !chatId || !trainNumber) {
+			const message = await ctx.reply(this.templateService.noArrivalCity());
+			ctx.session.messageIds.push(message.message_id);
+			return;
 		}
 
-		const unixTimestamp = Math.floor(new Date(selectedYear, selectedMonth, selectedDay).getTime() / 1000);
+		if (!findTrain) {
+			const message = await ctx.reply('Ошибка...');
+			ctx.session.messageIds.push(message.message_id);
+			return;
+		}
 
-		addSchedule({
-			interval: 15000,
-			duration: 24 * 60 * 60 * 1000,
-			callback: async (time, stop) => {
-				const trains = await getSvrpkTickets<{ data: ITrain[] }>(cityFrom.id, cityTo.id, unixTimestamp.toString());
-				const findTrain = trains.data.find((train) => train.number === findTrainId);
+		const date = `${selectedYear}-${(selectedMonth + 1).toString().padStart(2, '0')}-${selectedDay.toString().padStart(2, '0')}`;
 
-				if (findTrain?.place_count && findTrain.place_count > 0) {
-					console.log(findTrain);
-					ctx.reply(messageService.generateDetailedFindTrainMessage(findTrain), {
-						parse_mode: 'HTML',
-					});
-					stop();
-				}
-			},
+		await this.scheduleService.addScheduleWatch({
+			cityFrom,
+			cityTo,
+			date,
+			chatId,
+			userId,
+			trainNumber,
+			train: findTrain,
 		});
-		await ctx.reply(await messageService.messageFindPlace(ctx));
 	}
 }
-const watchPlaceAction = new WatchPlaceAction();
-export default watchPlaceAction;

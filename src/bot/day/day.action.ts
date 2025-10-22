@@ -1,28 +1,25 @@
-import { Context } from 'telegraf';
-import watchAction from '../watch/watch.action';
-import { userRedis } from '../../services/user.service';
+import { WatchAction } from '../watch/watch.action';
+import { UserRedis } from '../../services';
 import { ACTION_DAY } from './consts';
-import { Action } from '../../decorator/action.decorator';
-import messageService from '../../services/message-template.service';
+import { Action } from '../../decorator';
+import { ActionContext } from '../../types';
 
-class DayAction {
+export class DayAction {
+	constructor(
+		private readonly userRedis: UserRedis,
+		private readonly watchAction: WatchAction,
+	) {}
+
 	@Action(new RegExp(ACTION_DAY))
-	async action(ctx: Context) {
-		if (!ctx.from) {
-			return ctx.reply(messageService.userDataError());
-		}
-		if (!('match' in ctx)) {
-			return ctx.reply('Error: match not found in ctx');
-		}
-		const userId = ctx.from.id;
-		const userData = await userRedis.getData(userId);
+	async action(ctx: ActionContext) {
+		const userId = ctx.from!.id;
+		const userData = await this.userRedis.getData(userId);
 
-		userData.selectedDay = Number((ctx.match as RegExp[])[1]);
-		await userRedis.setData(userId, userData);
+		userData.selectedDay = Number((ctx.match as string[])[1]);
+		await this.userRedis.setData(userId, userData);
 
-		const { text, buttons } = await watchAction.buttons(ctx);
-		ctx.reply(text, buttons);
+		const { text, reply_markup } = await this.watchAction.buttons(ctx);
+		const message = await ctx.reply(text, { reply_markup });
+		ctx.session.messageIds.push(message.message_id);
 	}
 }
-const actionDay = new DayAction();
-export default actionDay;

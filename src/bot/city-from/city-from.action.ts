@@ -1,29 +1,26 @@
-import { userRedis } from '../../services/user.service';
+import { UserRedis } from '../../services';
 import { CITY_FROM_ACTION } from './consts';
-import { Action } from '../../decorator/action.decorator';
-import { Context } from 'telegraf';
-import messageService from '../../services/message-template.service';
+import { Action } from '../../decorator';
 import { CurrentSelectCity } from '../select-city/consts';
+import { ActionContext } from '../../types';
 
-class CityFromAction {
+export class CityFromAction {
+	constructor(private readonly userRedis: UserRedis) {}
+
 	@Action(CITY_FROM_ACTION)
-	async action(ctx: Context) {
-		if (!ctx.from) {
-			return ctx.reply(messageService.userDataError());
-		}
+	async action(ctx: ActionContext) {
 		const { text } = this.buttons();
 		const userId = ctx.from.id;
-		const userData = await userRedis.getData(userId);
+		const userData = await this.userRedis.getData(userId);
 		userData.currentSelectCity = CurrentSelectCity.From;
-		await userRedis.setData(userId, userData);
-		ctx.reply(text);
+		await this.userRedis.setData(userId, userData);
+		const message = await ctx.reply(text);
+		ctx.session.messageIds.push(message.message_id);
 	}
+
 	buttons() {
 		return {
 			text: 'Введите город откуда:',
 		};
 	}
 }
-
-const cityFromAction = new CityFromAction();
-export default cityFromAction;

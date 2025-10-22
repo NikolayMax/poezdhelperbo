@@ -1,56 +1,78 @@
-import { Context, Markup } from 'telegraf';
-import { userRedis } from '../../services/user.service';
-import { ITrain } from '../../types/svrpk-train.interface';
-import { getSvrpkTickets, searchRzdTickets } from '../../api';
-import { IRzdTrain } from '../../types/rzd-train.interface';
-import messageService from '../../services/message-template.service';
-import { Action } from '../../decorator/action.decorator';
+import { InlineKeyboard } from 'grammy';
+import { UserRedis, TemplateService, ApiService, ErrorService, TrainService } from '../../services';
+import { Action } from '../../decorator';
 import { WATCH_FIND_ACTION } from './consts';
+import { ActionContext } from '../../types';
 
-class WatchFindAction {
+export class WatchFindAction {
+	constructor(
+		private readonly userRedis: UserRedis,
+		private readonly templateService: TemplateService,
+		private readonly api: ApiService,
+		private readonly errorService: ErrorService,
+		private readonly trainService: TrainService,
+	) {}
+
 	@Action(WATCH_FIND_ACTION)
-	async action(ctx: Context) {
-		if (!ctx.from) {
-			return ctx.reply(messageService.userDataError());
-		}
+	async action(ctx: ActionContext) {
 		const userId = ctx.from.id;
-		const userData = await userRedis.getData(userId);
-		const { cityFrom, cityTo, selectedYear, selectedMonth, selectedDay } = userData;
-		if (!cityFrom) {
-			return messageService.noDepartureCity();
-		}
-		if (!cityTo) {
-			return messageService.noArrivalCity();
-		}
-		userData.cities = [];
+		const userData = await this.userRedis.getData(userId);
+		const inlineKeyboard = new InlineKeyboard();
 
-		const date = `${selectedYear}-${(selectedMonth + 1).toString().padStart(2, '0')}-${selectedDay.toString().padStart(2, '0')}`;
-		const trains = await searchRzdTickets<{ Trains: IRzdTrain[] }>(cityFrom.id.toString(), cityTo.id.toString(), date);
-		const unixTimestamp = Math.floor(new Date(selectedYear, selectedMonth, selectedDay).getTime() / 1000);
-		const trains2 = await getSvrpkTickets<{ data: ITrain[] }>(cityFrom.id, cityTo.id, unixTimestamp.toString());
+		try {
+			const { cityFrom, cityTo, selectedYear, selectedMonth, selectedDay } = userData;
 
-		const filteredTrains = trains.Trains.filter((train) => {
-			const trainFind = trains2.data.find((item) => item.number === train.TrainNumber);
-			train.countSeats = trainFind ? trainFind.place_count : 0;
+			const date = `${selectedYear}-${(selectedMonth + 1).toString().padStart(2, '0')}-${selectedDay.toString().padStart(2, '0')}`;
 
-			return train.IsSuburban && train.CategoryId === 12;
-		});
-		if (filteredTrains.length < 1) {
-			ctx.reply(await messageService.messageNotFoundTrains(ctx));
-		}
-		filteredTrains.forEach((train) => {
-			const inlineKeyboard = [];
-			if (train.countSeats < 1) {
-				inlineKeyboard.push(Markup.button.callback(`🚆 Отследить: [${train.TrainNumber}]`, `watch-place:${train.TrainNumber}`));
+			if (!cityFrom) {
+				await ctx.reply(this.templateService.noDepartureCity());
+				return;
 			}
-			const keyboard = Markup.inlineKeyboard(inlineKeyboard);
 
-			ctx.reply(messageService.generateDetailedTrainMessage(train), {
-				parse_mode: 'HTML',
-				...keyboard,
-			});
-		});
+			if (!cityTo) {
+				await ctx.reply(this.templateService.noArrivalCity());
+				return;
+			}
+
+			const { data, success } = await this.api.getSchedule(cityFrom.id, cityTo.id, date);
+
+			if (!success) {
+				await ctx.reply(this.errorService.serverError());
+				return;
+			}
+
+			await this.trainService.setTrains(userId, data.data);
+
+			if (data.data.length < 1) {
+				await ctx.reply(await this.templateService.messageNotFoundTrains(ctx));
+			}
+
+			for (const train of data.data) {
+				if (train.rail_type !== 'Комфортный') continue;
+
+				if (train.places_count === null || train.places_count < 1) {
+					inlineKeyboard.text(`🚆 Отследить: [${train.name}]`, `watch-place:${train.train_number}`);
+				}
+
+				const message = await ctx.reply(
+					await this.templateService.generateDetailedTrainMessage(train, date, userData),
+					{
+						parse_mode: 'HTML',
+						reply_markup: inlineKeyboard,
+					},
+				);
+				ctx.session.messageIds.push(message.message_id);
+			}
+		} catch (e) {
+			console.log(e);
+			if (this.isError(e)) {
+				const message = await ctx.reply(this.errorService.customError(e.message));
+				ctx.session.messageIds.push(message.message_id);
+			}
+		}
+	}
+
+	isError(error: unknown): error is Error {
+		return error instanceof Error;
 	}
 }
-const watchFindAction = new WatchFindAction();
-export default watchFindAction;

@@ -1,23 +1,29 @@
 import js from '@eslint/js';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
-import prettierPlugin from 'eslint-plugin-prettier';
-import prettierConfig from 'eslint-config-prettier';
-import { defineConfig, globalIgnores } from 'eslint/config';
+import { defineConfig } from 'eslint/config';
+import prettier from 'eslint-config-prettier';
 
 export default defineConfig([
 	{
-		files: ['**/*.{js,mjs,cjs,ts,mts,cts}'],
-		plugins: {
-			js,
-			prettier: prettierPlugin,
-		},
+		ignores: ['node_modules/**', 'dist/**', '*.config.*'],
+	},
+	{
+		files: ['**/*.{js,ts,mts}'],
+		plugins: { js },
 		extends: ['js/recommended'],
 		languageOptions: { globals: globals.node },
-		rules: {
-			...prettierConfig.rules,
+		ignores: ['**/*.test.ts', '**/*.spec.ts', '**/*.mock.ts'],
+	},
+	{
+		files: ['**/*.test.ts', '**/*.spec.ts', '**/*.mock.ts'],
+		languageOptions: {
+			globals: {
+				...globals.jest, // или ...globals.mocha etc.
+			},
 		},
+		rules: {},
 	},
 	tseslint.configs.recommended,
-	globalIgnores(['dist', 'node_modules']),
+	prettier,
 ]);

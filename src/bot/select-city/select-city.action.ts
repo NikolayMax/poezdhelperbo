@@ -1,22 +1,20 @@
-import { Context } from 'telegraf';
-import watchAction from '../watch/watch.action';
-import { userRedis } from '../../services/user.service';
-import { Action } from '../../decorator/action.decorator';
-import messageService from '../../services/message-template.service';
+import { WatchAction } from '../watch/watch.action';
+import { UserRedis } from '../../services';
+import { Action } from '../../decorator';
 import { CurrentSelectCity, SELECT_CITY } from './consts';
+import { ActionContext } from '../../types';
 
-class SelectCityAction {
+export class SelectCityAction {
+	constructor(
+		private readonly userRedis: UserRedis,
+		private readonly watchAction: WatchAction,
+	) {}
+
 	@Action(new RegExp(SELECT_CITY))
-	async action(ctx: Context) {
-		if (!ctx.from) {
-			return ctx.reply(messageService.userDataError());
-		}
-		if (!('match' in ctx)) {
-			return ctx.reply('Error: match not found in ctx');
-		}
+	async action(ctx: ActionContext) {
 		const slug = (ctx.match as string[])[1];
 		const userId = ctx.from.id;
-		const userData = await userRedis.getData(userId);
+		const userData = await this.userRedis.getData(userId);
 		const currentCity = userData?.cities?.find((city) => city.slug === slug);
 
 		if (userData.currentSelectCity === CurrentSelectCity.From) {
@@ -25,11 +23,13 @@ class SelectCityAction {
 			userData.cityTo = currentCity;
 		}
 
-		await userRedis.setData(userId, userData);
+		userData.cities = [];
+		userData.currentSelectCity = undefined;
 
-		const { text, buttons } = await watchAction.buttons(ctx);
-		ctx.reply(text, buttons);
+		await this.userRedis.setData(userId, userData);
+
+		const { text, reply_markup } = await this.watchAction.buttons(ctx);
+		const message = await ctx.reply(text, { reply_markup });
+		ctx.session.messageIds.push(message.message_id);
 	}
 }
-const selectCityAction = new SelectCityAction();
-export default selectCityAction;

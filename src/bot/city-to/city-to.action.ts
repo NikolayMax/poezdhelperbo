@@ -1,22 +1,21 @@
-import { Context } from 'telegraf';
-import { userRedis } from '../../services/user.service';
-import { Action } from '../../decorator/action.decorator';
-import messageService from '../../services/message-template.service';
+import { UserRedis } from '../../services';
+import { Action } from '../../decorator';
 import { CITY_TO_ACTION } from './consts';
 import { CurrentSelectCity } from '../select-city/consts';
+import { ActionContext } from '../../types';
 
-class CityToAction {
+export class CityToAction {
+	constructor(private readonly userRedis: UserRedis) {}
+
 	@Action(CITY_TO_ACTION)
-	async action(ctx: Context) {
+	async action(ctx: ActionContext) {
 		const { text } = this.buttons();
-		if (!ctx.from) {
-			return ctx.reply(messageService.userDataError());
-		}
 		const userId = ctx.from.id;
-		const userData = await userRedis.getData(userId);
+		const userData = await this.userRedis.getData(userId);
 		userData.currentSelectCity = CurrentSelectCity.To;
-		await userRedis.setData(userId, userData);
-		ctx.reply(text);
+		await this.userRedis.setData(userId, userData);
+		const message = await ctx.reply(text);
+		ctx.session.messageIds.push(message.message_id);
 	}
 
 	buttons() {
@@ -25,5 +24,3 @@ class CityToAction {
 		};
 	}
 }
-const cityToAction = new CityToAction();
-export default cityToAction;
