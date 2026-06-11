@@ -4,6 +4,11 @@ import { UserRedis } from './user.service';
 import { ApiService } from './api.service';
 import { Bot } from 'grammy';
 
+function formatDate(dateStr: string): string {
+	const [y, m, d] = dateStr.split('-');
+	return `${d}.${m}.${y}`;
+}
+
 export class ScheduleService {
 	private readonly key = 'schedules';
 	private readonly CHECK_INTERVAL = 30000; // 30 секунд
@@ -143,7 +148,7 @@ export class ScheduleService {
 			const scheduleData = schedule[routeKey];
 			const message = await this.bot.api.sendMessage(
 				user.chatId,
-				`🎉 <b>Найдены места!</b>\n\n🚂 Поезд: ${train.train_number}\n📅 Дата: ${scheduleData?.date || 'неизвестно'}\n🎫 Свободные места: ${train.places_count}\n\nПерейдите на сайт РЖД для покупки билетов!`,
+				`🎉 <b>Найдены места!</b>\n\n🚂 Поезд: ${train.train_number}\n📅 Дата: ${scheduleData?.date ? formatDate(scheduleData.date) : 'неизвестно'}\n🎫 Свободные места: ${train.places_count}\n\nПерейдите на сайт РЖД для покупки билетов!`,
 				{ parse_mode: 'HTML' },
 			);
 			userData.messageIds.push(message.message_id);

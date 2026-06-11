@@ -2,6 +2,11 @@ import { Context } from 'grammy';
 import { UserRedis } from './user.service';
 import { IUserData, ITrainSchedule } from '../types';
 
+function formatDate(dateStr: string): string {
+	const [y, m, d] = dateStr.split('-');
+	return `${d}.${m}.${y}`;
+}
+
 export class TemplateService {
 	constructor(private readonly userRedis: UserRedis) {}
 
@@ -75,7 +80,7 @@ ${isPlace ? '‼️‼️‼️ <b>НАШЛОСЬ МЕСТО!</b> ‼️‼️�
 🚂 <b>Поезд ${train.train_number}</b>
 ${train.name ? `   <i>${train.name}</i>\n` : ''}
 ━━━━━━━━━━━━━━━━━━
-📅 <b>Дата:</b> ${date}
+📅 <b>Дата:</b> ${formatDate(date)}
 🕒 <b>Время:</b> ${train.departure_time} → ${train.arrival_time}
 
 🏁 <b>Маршрут:</b>

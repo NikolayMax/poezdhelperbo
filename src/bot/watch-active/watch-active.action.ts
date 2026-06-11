@@ -41,7 +41,7 @@ export class WatchActiveAction {
 			const message = await ctx.reply(
 				`
 <b>🚂 Поезд ${trainNumber}</b>
-📅 <b>Дата:</b> ${date}
+📅 <b>Дата:</b> ${date.split('-').reverse().join('.')}
 🕒 <b>Время:</b> ${departure_time} → ${arrival_time}
 🏁 <b>Маршрут:</b> ${cityFrom.name} → ${cityTo.name}
 ━━━━━━━━━━━━━━━━━━
