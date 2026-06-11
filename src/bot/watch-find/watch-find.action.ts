@@ -17,7 +17,6 @@ export class WatchFindAction {
 	async action(ctx: ActionContext) {
 		const userId = ctx.from.id;
 		const userData = await this.userRedis.getData(userId);
-		const inlineKeyboard = new InlineKeyboard();
 
 		try {
 			const { cityFrom, cityTo, selectedYear, selectedMonth, selectedDay } = userData;
@@ -51,6 +50,7 @@ export class WatchFindAction {
 			for (const train of data.data) {
 				if (train.rail_type !== 'Комфортный') continue;
 
+				const inlineKeyboard = new InlineKeyboard();
 				if (train.places_count === null || train.places_count < 1) {
 					inlineKeyboard.text(`🚆 Отследить: [${train.name}]`, `watch-place:${train.train_number}`);
 				}
