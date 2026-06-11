@@ -69,7 +69,7 @@ export class CalendarAction {
 				userData.selectedMonth = now.getMonth();
 				userData.selectedDay = now.getDate();
 				await this.userRedis.setData(userId, userData);
-				await ctx.deleteMessage();
+				await ctx.deleteMessage().catch(() => {});
 				await this.showWatchParams(ctx);
 				return;
 			}
@@ -80,14 +80,14 @@ export class CalendarAction {
 				userData.selectedMonth = tomorrow.getMonth();
 				userData.selectedDay = tomorrow.getDate();
 				await this.userRedis.setData(userId, userData);
-				await ctx.deleteMessage();
+				await ctx.deleteMessage().catch(() => {});
 				await this.showWatchParams(ctx);
 				return;
 			}
 			case 'day': {
 				userData.selectedDay = Number(value);
 				await this.userRedis.setData(userId, userData);
-				await ctx.deleteMessage();
+				await ctx.deleteMessage().catch(() => {});
 				await this.showWatchParams(ctx);
 				return;
 			}
@@ -107,7 +107,12 @@ export class CalendarAction {
 				}
 				await this.userRedis.setData(userId, userData);
 				const keyboard = renderCalendar(userData.selectedYear, userData.selectedMonth);
-				await ctx.editMessageReplyMarkup({ reply_markup: keyboard });
+				try {
+					await ctx.editMessageReplyMarkup({ reply_markup: keyboard });
+				} catch {
+					const message = await ctx.reply('📅 Выберите дату:', { reply_markup: keyboard });
+					ctx.session.messageIds.push(message.message_id);
+				}
 				return;
 			}
 			case 'noop': {

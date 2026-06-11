@@ -20,7 +20,6 @@ export class WatchDateAction {
 		await this.userRedis.setData(userId, userData);
 
 		const keyboard = renderCalendar(userData.selectedYear, userData.selectedMonth);
-		const message = await ctx.reply('📅 Выберите дату:', { reply_markup: keyboard });
-		ctx.session.messageIds.push(message.message_id);
+		await ctx.reply('📅 Выберите дату:', { reply_markup: keyboard });
 	}
 }

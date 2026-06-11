@@ -73,6 +73,10 @@ export class BotTelegram {
 		CommandRegistry.setupBot(this.bot);
 
 		this.bot.on('message:text', message.action.bind(message));
+		this.bot.catch((err) => {
+			console.error('Bot error:', err.message || err);
+		});
+
 		this.bot
 			.start()
 			.then(() => console.log('START LISTEN APP'))
