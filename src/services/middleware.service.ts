@@ -16,9 +16,7 @@ export class MiddlewareService {
 			for (const messageId of messageIdsToDelete) {
 				try {
 					await ctx.api.deleteMessage(ctx.chat.id, messageId);
-				} catch (e) {
-					console.log(e);
-				}
+				} catch {}
 			}
 			await this.userRedis.setData(ctx.chat.id, userData);
 		}
@@ -29,9 +27,7 @@ export class MiddlewareService {
 			for (const messageId of sessionMessageIds) {
 				try {
 					await ctx.api.deleteMessage(ctx.chat.id, messageId);
-				} catch (e) {
-					console.log(e);
-				}
+				} catch {}
 			}
 		}
 
