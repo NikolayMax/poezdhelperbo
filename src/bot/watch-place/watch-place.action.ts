@@ -20,12 +20,12 @@ export class WatchPlaceAction {
 		const { selectedYear, selectedMonth, selectedDay, cityFrom, cityTo } = userData;
 
 		if (!cityFrom) {
-			const message = await ctx.reply(this.templateService.noDepartureCity());
+			const message = await ctx.reply(this.templateService.noDepartureCity(), { parse_mode: 'HTML' });
 			ctx.session.messageIds.push(message.message_id);
 			return;
 		}
 		if (!cityTo || !chatId || !trainNumber) {
-			const message = await ctx.reply(this.templateService.noArrivalCity());
+			const message = await ctx.reply(this.templateService.noArrivalCity(), { parse_mode: 'HTML' });
 			ctx.session.messageIds.push(message.message_id);
 			return;
 		}

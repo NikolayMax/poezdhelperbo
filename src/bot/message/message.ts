@@ -42,7 +42,7 @@ export class Message {
 		await this.userRedis.setData(userId, userData);
 
 		if (data.data.length < 1) {
-			const message = await ctx.reply(this.templateService.messageCityNotFound(ctx.message!.text || ''));
+			const message = await ctx.reply(this.templateService.messageCityNotFound(ctx.message!.text || ''), { parse_mode: 'HTML' });
 			ctx.session.messageIds.push(message.message_id);
 			await ctx.deleteMessage();
 			return;

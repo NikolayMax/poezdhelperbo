@@ -24,12 +24,12 @@ export class WatchFindAction {
 			const date = `${selectedYear}-${(selectedMonth + 1).toString().padStart(2, '0')}-${selectedDay.toString().padStart(2, '0')}`;
 
 			if (!cityFrom) {
-				await ctx.reply(this.templateService.noDepartureCity());
+				await ctx.reply(this.templateService.noDepartureCity(), { parse_mode: 'HTML' });
 				return;
 			}
 
 			if (!cityTo) {
-				await ctx.reply(this.templateService.noArrivalCity());
+				await ctx.reply(this.templateService.noArrivalCity(), { parse_mode: 'HTML' });
 				return;
 			}
 
@@ -43,7 +43,7 @@ export class WatchFindAction {
 			await this.trainService.setTrains(userId, data.data);
 
 			if (data.data.length < 1) {
-				await ctx.reply(await this.templateService.messageNotFoundTrains(ctx));
+				await ctx.reply(await this.templateService.messageNotFoundTrains(ctx), { parse_mode: 'HTML' });
 				return;
 			}
 
