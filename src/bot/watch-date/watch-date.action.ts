@@ -1,32 +1,26 @@
-import { InlineKeyboard } from 'grammy';
 import { UserRedis } from '../../services';
-import { MonthNameRus, WATCH_DATE } from './consts';
 import { Action } from '../../decorator';
+import { WATCH_DATE } from './consts';
 import { ActionContext } from '../../types';
+import { renderCalendar } from '../calendar/calendar.action';
 
 export class WatchDateAction {
 	constructor(private readonly userRedis: UserRedis) {}
 
 	@Action(WATCH_DATE)
 	async action(ctx: ActionContext) {
-		const { text, reply_markup } = await this.buttons(ctx);
-		const message = await ctx.reply(text, { reply_markup });
-		ctx.session.messageIds.push(message.message_id);
-	}
-
-	async buttons(ctx: ActionContext) {
 		const userId = ctx.from.id;
-		const { selectedMonth } = await this.userRedis.getData(userId);
-		const inlineKeyboard = new InlineKeyboard();
+		const userData = await this.userRedis.getData(userId);
 
-		for (let i: number = selectedMonth ? selectedMonth : 0; i < 12; i++) {
-			if (typeof MonthNameRus[i] === 'string') {
-				inlineKeyboard.text(MonthNameRus[i] as string, `month:${i}`).row();
-			}
+		if (userData.selectedYear === undefined || userData.selectedMonth === undefined) {
+			const now = new Date();
+			userData.selectedYear = now.getFullYear();
+			userData.selectedMonth = now.getMonth();
 		}
-		return {
-			text: 'Выберите месяц: ',
-			reply_markup: inlineKeyboard,
-		};
+		await this.userRedis.setData(userId, userData);
+
+		const keyboard = renderCalendar(userData.selectedYear, userData.selectedMonth);
+		const message = await ctx.reply('📅 Выберите дату:', { reply_markup: keyboard });
+		ctx.session.messageIds.push(message.message_id);
 	}
 }

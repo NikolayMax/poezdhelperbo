@@ -8,9 +8,8 @@ import {
 	CityFromAction,
 	CityToAction,
 	WatchFindAction,
-	MonthAction,
 	SelectCityAction,
-	DayAction,
+	CalendarAction,
 	Message,
 	WatchPlaceAction,
 	WatchActiveAction,
@@ -56,16 +55,15 @@ export class BotTelegram {
 		);
 		this.bot.use(this.middleware.action.bind(this.middleware));
 
+		const watchAction = new WatchAction(this.userRedis);
 		new WatchDateAction(this.userRedis);
 		new CityFromAction(this.userRedis);
 		new CityToAction(this.userRedis);
-		new MonthAction(this.userRedis);
+		new CalendarAction(this.userRedis, watchAction);
 		new WatchPlaceAction(this.userRedis, this.templateService, this.scheduleService, this.trainService);
 		new WatchFindAction(this.userRedis, this.templateService, this.api, this.errorService, this.trainService);
-		const watchAction = new WatchAction(this.userRedis);
 		const startAction = new StartAction();
 		new StartCommand(startAction);
-		new DayAction(this.userRedis, watchAction);
 		new SelectCityAction(this.userRedis, watchAction);
 		const message = new Message(this.userRedis, this.templateService, this.api, this.errorService);
 		new WatchActiveAction(this.userRedis, this.scheduleService);
