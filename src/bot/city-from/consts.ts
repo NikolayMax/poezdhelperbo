@@ -1,1 +1,1 @@
-export const CITY_FROM_ACTION = '/coty-from';
+export const CITY_FROM_ACTION = '/city-from';

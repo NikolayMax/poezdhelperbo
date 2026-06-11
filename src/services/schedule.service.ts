@@ -11,7 +11,7 @@ export class ScheduleService {
 	private intervalId: NodeJS.Timeout | null = null;
 	private requestCache = new Map<TKeyRoute, { data: ITrainSchedule[]; timestamp: number }>();
 	private readonly CACHE_TTL = 30000;
-	private readonly WATCH_TIMEOUT = 60 * 60; //24 * 60 * 60
+	private readonly WATCH_TIMEOUT = 24 * 60 * 60; // 24 hours in seconds
 
 	constructor(
 		private readonly bot: Bot<BotContext>,
@@ -28,7 +28,7 @@ export class ScheduleService {
 		await this.redis.set(this.key, schedules);
 	}
 
-	getKeyRoute(trainNumber: number, fromId: number, toId: number, date: string): TKeyRoute {
+	getKeyRoute(trainNumber: string, fromId: number, toId: number, date: string): TKeyRoute {
 		return `train:${trainNumber}:${fromId}:${toId}:${date}`;
 	}
 
@@ -71,7 +71,7 @@ export class ScheduleService {
 		const trainData = await this.getCachedTrainData(trainNumber, cityFrom.id, cityTo.id, date);
 		if (!trainData) return;
 
-		const targetTrain = trainData.find((t) => Number(t.train_number) === trainNumber);
+		const targetTrain = trainData.find((t) => t.train_number === trainNumber);
 		if (!targetTrain) return;
 
 		// Проверяем места и списываем время у пользователей
@@ -80,7 +80,7 @@ export class ScheduleService {
 		}
 	}
 
-	private async getCachedTrainData(trainNumber: number, fromId: number, toId: number, date: string) {
+	private async getCachedTrainData(trainNumber: string, fromId: number, toId: number, date: string) {
 		const cacheKey = this.getKeyRoute(trainNumber, fromId, toId, date);
 		const now = Date.now();
 
@@ -126,7 +126,11 @@ export class ScheduleService {
 			// Время вышло - удаляем отслеживание
 			await this.stopUserWatch(userId, routeKey);
 			const userData = await this.userRedis.getData(userId);
-			const message = await this.bot.api.sendMessage(user.chatId, '⏰ Время отслеживания истекло');
+			const message = await this.bot.api.sendMessage(
+					user.chatId,
+					`⏰ <b>Время отслеживания истекло</b>\n\nПоезд ${train.train_number} больше не отслеживается.\nВы можете запустить новый поиск через главное меню.`,
+					{ parse_mode: 'HTML' },
+				);
 			userData.messageIds.push(message.message_id);
 			await this.userRedis.setData(userId, userData);
 			return;
@@ -135,9 +139,12 @@ export class ScheduleService {
 		// Если есть места - уведомляем и останавливаем отслеживание
 		if (user.chatId && train.places_count && train.places_count > 0) {
 			const userData = await this.userRedis.getData(userId);
+			const schedule = await this.getSchedules();
+			const scheduleData = schedule[routeKey];
 			const message = await this.bot.api.sendMessage(
 				user.chatId,
-				`🎉 Найдены места на поезд ${train.train_number}!`,
+				`🎉 <b>Найдены места!</b>\n\n🚂 Поезд: ${train.train_number}\n📅 Дата: ${scheduleData?.date || 'неизвестно'}\n🎫 Свободные места: ${train.places_count}\n\nПерейдите на сайт РЖД для покупки билетов!`,
+				{ parse_mode: 'HTML' },
 			);
 			userData.messageIds.push(message.message_id);
 			await this.userRedis.setData(userId, userData);
@@ -210,10 +217,11 @@ export class ScheduleService {
 		const isAlreadyWatching = user.activeSchedules.some((s) => s.routeId === routeKey);
 		if (user.chatId && isAlreadyWatching) {
 			const userData = await this.userRedis.getData(userId);
-			const message = await this.bot.api.sendMessage(
-				user.chatId,
-				`❌ Вы уже отслеживаете поезд ${trainNumber} на ${date}`,
-			);
+const message = await this.bot.api.sendMessage(
+			user.chatId,
+			`❌ <b>Уже отслеживается</b>\n\nВы уже следите за поездом <b>${trainNumber}</b> на <b>${date}</b>.`,
+			{ parse_mode: 'HTML' },
+		);
 			userData.messageIds.push(message.message_id);
 			await this.userRedis.setData(userId, userData);
 			return;
@@ -238,7 +246,8 @@ export class ScheduleService {
 		const userData = await this.userRedis.getData(userId);
 		const message = await this.bot.api.sendMessage(
 			user.chatId!,
-			`✅ Отслеживание поезда ${trainNumber} на ${date} начато`,
+			`✅ <b>Отслеживание начато!</b>\n\n🚂 Поезд: ${trainNumber}\n📅 Дата: ${date}\n⏰ Я уведомлю вас, как только появятся свободные места.`,
+			{ parse_mode: 'HTML' },
 		);
 		userData.messageIds.push(message.message_id);
 		await this.userRedis.setData(userId, userData);

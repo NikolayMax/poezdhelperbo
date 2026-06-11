@@ -13,15 +13,19 @@ class App {
 		const { parsed } = config();
 
 		if (!parsed) {
+			console.error('Error: .env file not found');
 			return;
 		}
 		if (parsed && !('TELEGRAM_KEY' in parsed)) {
+			console.error('Error: TELEGRAM_KEY is not defined in .env');
 			return;
 		}
 		if (!parsed.TELEGRAM_KEY) {
+			console.error('Error: TELEGRAM_KEY is empty');
 			return;
 		}
 		if (!parsed.REDIS_URL) {
+			console.error('Error: REDIS_URL is not defined in .env');
 			return;
 		}
 

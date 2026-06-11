@@ -14,12 +14,10 @@ export class WatchPlaceAction {
 	@Action(new RegExp(WATCH_PLACE))
 	async action(ctx: ActionContext) {
 		const chatId = ctx.chat?.id;
-		const trainNumber = +(ctx.match[1] as string);
+		const trainNumber = ctx.match[1];
 		const userId = ctx.from.id;
-		const trains = await this.trainService.getTrains(userId);
 		const userData = await this.userRedis.getData(userId);
 		const { selectedYear, selectedMonth, selectedDay, cityFrom, cityTo } = userData;
-		const findTrain = trains.find((train) => train.train_number === `${trainNumber}`);
 
 		if (!cityFrom) {
 			const message = await ctx.reply(this.templateService.noDepartureCity());
@@ -31,6 +29,9 @@ export class WatchPlaceAction {
 			ctx.session.messageIds.push(message.message_id);
 			return;
 		}
+
+		const trains = await this.trainService.getTrains(userId);
+		const findTrain = trains.find((train) => train.train_number === trainNumber);
 
 		if (!findTrain) {
 			const message = await ctx.reply('Ошибка...');

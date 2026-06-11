@@ -19,13 +19,13 @@ export class TemplateService {
 	}
 
 	noDepartureCity() {
-		return '📍 *Не выбран город отправления*...';
+		return '📍 <b>Не выбран город отправления</b>\nПожалуйста, выберите станцию отправления, нажав на соответствующую кнопку.';
 	}
 	noArrivalCity() {
-		return '🎯 *Не выбран город назначения*...';
+		return '🎯 <b>Не выбран город назначения</b>\nПожалуйста, выберите станцию назначения, нажав на соответствующую кнопку.';
 	}
 
-	async messageNotFoundTrains(ctx: Context) {
+async messageNotFoundTrains(ctx: Context) {
 		if (!ctx.from) {
 			return 'Не удалось получить информацию о пользователе';
 		}
@@ -34,19 +34,21 @@ export class TemplateService {
 		const { cityFrom, cityTo, selectedYear, selectedMonth, selectedDay } = userData;
 
 		if (!cityFrom || !cityTo) {
-			return 'Не выбраны города или город';
+			return '❓ Не выбраны города отправления или назначения';
 		}
+
+		const date = `${selectedDay.toString().padStart(2, '0')}.${(selectedMonth + 1).toString().padStart(2, '0')}.${selectedYear}`;
 		return `
-            😔 *Ничего не найдено*
-        
-            По вашему запросу "[${cityFrom.name}] → [${cityTo.name}] на [${selectedDay.toString().padStart(2, '0')}.${selectedMonth + 1}.${selectedYear}]" электричек не найдено.
-            
-            *Попробуйте:*
-            • Изменить дату поездки
-            • Проверить написание городов
-            • Выбрать соседние крупные станции
-            
-            Хотите попробовать другой маршрут?
+😔 <b>Поездов не найдено</b>
+
+По маршруту <b>${cityFrom.name} → ${cityTo.name}</b> на <b>${date}</b> электричек не найдено.
+
+<b>Что можно сделать?</b>
+• 📅 Изменить дату поездки
+• 🏙️ Проверить правильность названий городов
+• 🚉 Выбрать соседние крупные станции
+
+Хотите попробовать другой маршрут? Нажмите "🎯 Начать поиск мест" в главном меню.
         `.trim();
 	}
 
@@ -69,18 +71,19 @@ export class TemplateService {
 		const seatsMessage = this.generateSeatsMessage(train.places_count);
 
 		return `
-${isPlace ? '‼️‼️‼️<b>НАШЛОСЬ МЕСТО</b>‼️‼️‼️' : ''}
-🚂 <b>Поезд ${train.train_number}</b>${train.name ? ` - ${train.name}` : ''}
-
+${isPlace ? '‼️‼️‼️ <b>НАШЛОСЬ МЕСТО!</b> ‼️‼️‼️\n' : ''}
+🚂 <b>Поезд ${train.train_number}</b>
+${train.name ? `   <i>${train.name}</i>\n` : ''}
+━━━━━━━━━━━━━━━━━━
 📅 <b>Дата:</b> ${date}
 🕒 <b>Время:</b> ${train.departure_time} → ${train.arrival_time}
 
-🏁 <b>Станции:</b>
-▫️ Отправление: ${cityFrom?.name}
-▫️ Прибытие: ${cityTo?.name}
+🏁 <b>Маршрут:</b>
+   ▫️ Отправление: ${cityFrom?.name || '❓ Не указано'}
+   ▫️ Прибытие: ${cityTo?.name || '❓ Не указано'}
 
-
-${seatsMessage}
+${seatsMessage ? `🎫 <b>Доступные места:</b> ${seatsMessage}\n` : '❌ <b>Мест нет</b>\n'}
+━━━━━━━━━━━━━━━━━━
         `.trim();
 	}
 }

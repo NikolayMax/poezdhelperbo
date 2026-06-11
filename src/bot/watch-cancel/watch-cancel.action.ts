@@ -23,15 +23,15 @@ export class WatchCancelAction {
 
 		const findSchedule = userData.activeSchedules.find(
 			(schedule) =>
-				schedule.routeId === `${this.scheduleService.getKeyRoute(+trainNumber, +fromId, +toId, date)}`,
+				schedule.routeId === `${this.scheduleService.getKeyRoute(trainNumber, +fromId, +toId, date)}`,
 		);
 
 		if (findSchedule) {
 			await this.scheduleService.stopUserWatch(userId, findSchedule?.routeId);
-			const message = await ctx.reply('✅ Слежка за поездом отменена');
+			const message = await ctx.reply('✅ <b>Отслеживание отменено</b>\n\nПоезд больше не отслеживается.', { parse_mode: 'HTML' });
 			ctx.session.messageIds.push(message.message_id);
 		} else {
-			const message = await ctx.reply('❌ Ошибка! Не удалось отменить');
+			const message = await ctx.reply('❌ <b>Ошибка!</b>\n\nНе удалось отменить отслеживание. Возможно, оно уже было остановлено.', { parse_mode: 'HTML' });
 			ctx.session.messageIds.push(message.message_id);
 		}
 	}

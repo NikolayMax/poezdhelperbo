@@ -34,16 +34,18 @@ export class WatchActiveAction {
 			const inlineKeyboard = new InlineKeyboard();
 			const { trainNumber, cityFrom, cityTo, date, departure_time, arrival_time } = schedule;
 			inlineKeyboard.text(
-				`❌ Отменить`,
-				`cancel-${this.scheduleService.getKeyRoute(+trainNumber, cityFrom.id, cityTo.id, date)}`,
+				'❌ Отменить',
+				`cancel-${this.scheduleService.getKeyRoute(trainNumber, cityFrom.id, cityTo.id, date)}`,
 			);
 
 			const message = await ctx.reply(
 				`
+<b>🚂 Поезд ${trainNumber}</b>
 📅 <b>Дата:</b> ${date}
 🕒 <b>Время:</b> ${departure_time} → ${arrival_time}
-<b>Поезд: </b>${cityFrom.name} - ${cityTo.name}
-`.trim(),
+🏁 <b>Маршрут:</b> ${cityFrom.name} → ${cityTo.name}
+━━━━━━━━━━━━━━━━━━
+				`.trim(),
 				{
 					parse_mode: 'HTML',
 					reply_markup: inlineKeyboard,

@@ -45,6 +45,7 @@ export class WatchFindAction {
 
 			if (data.data.length < 1) {
 				await ctx.reply(await this.templateService.messageNotFoundTrains(ctx));
+				return;
 			}
 
 			for (const train of data.data) {

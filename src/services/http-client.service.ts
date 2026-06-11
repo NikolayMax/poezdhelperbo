@@ -14,24 +14,21 @@ export class HttpClientService {
 	async get<T>(url: string) {
 		try {
 			const controller = new AbortController();
-			setTimeout(() => controller.abort(), 5000);
+			const timeoutId = setTimeout(() => controller.abort(), 5000);
 			const response = await fetch(url, {
 				...this.fetchSettings,
 				signal: controller.signal,
 			});
+			clearTimeout(timeoutId);
 			if (!response.ok) {
+				let bodyMessage = '';
+				try {
+					const body = await response.json() as { message?: string };
+					bodyMessage = body.message ? `: ${body.message}` : '';
+				} catch {}
 				const error: HttpError = {
-					type:
-						response.status >= 100 && response.status < 200
-							? ErrorType.INFORMATION
-							: response.status >= 200 && response.status < 300
-								? ErrorType.SUCCESS
-								: response.status >= 300 && response.status < 400
-									? ErrorType.REDIRECT
-									: response.status >= 400 && response.status < 500
-										? ErrorType.CLIENT_ERROR
-										: ErrorType.SERVER_ERROR,
-					message: `HTTP ${response.status}: ${response.statusText}`,
+					type: response.status >= 500 ? ErrorType.SERVER_ERROR : ErrorType.CLIENT_ERROR,
+					message: `HTTP ${response.status}${bodyMessage}`,
 					status: response.status,
 				};
 				return this.failure(error);

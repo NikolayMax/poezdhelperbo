@@ -11,10 +11,11 @@ export class MiddlewareService {
 			if (!userData.chatId) {
 				userData.chatId = ctx.chat.id;
 			}
-			let messageId;
-			while ((messageId = userData.messageIds.pop())) {
+			const messageIdsToDelete = [...userData.messageIds];
+			userData.messageIds = [];
+			for (const messageId of messageIdsToDelete) {
 				try {
-					await ctx.api.deleteMessage(ctx.chat?.id, messageId);
+					await ctx.api.deleteMessage(ctx.chat.id, messageId);
 				} catch (e) {
 					console.log(e);
 				}
@@ -23,10 +24,11 @@ export class MiddlewareService {
 		}
 
 		if (ctx.session.messageIds.length > 0 && ctx.chat?.id) {
-			let messageId;
-			while ((messageId = ctx.session.messageIds.pop())) {
+			const sessionMessageIds = [...ctx.session.messageIds];
+			ctx.session.messageIds = [];
+			for (const messageId of sessionMessageIds) {
 				try {
-					await ctx.api.deleteMessage(ctx.chat?.id, messageId);
+					await ctx.api.deleteMessage(ctx.chat.id, messageId);
 				} catch (e) {
 					console.log(e);
 				}

@@ -2,25 +2,25 @@ import { ICity } from './city.interface';
 import { ITrainSchedule } from './train-schedule.interface';
 
 export interface IWatchSchedule {
-	trainNumber: number;
+	trainNumber: string;
 	cityFrom: ICity;
 	cityTo: ICity;
 	date: string;
-	departure_time: string; //"12:35",
-	arrival_time: string; //"15:10",
+	departure_time: string;
+	arrival_time: string;
 	watchers: number[];
 }
 
 export interface IAddScheduleParams {
 	userId: number;
 	chatId: number;
-	trainNumber: number;
+	trainNumber: string;
 	date: string;
 	cityFrom: ICity;
 	cityTo: ICity;
 	train: ITrainSchedule;
 }
-type TTrainNumber = number;
+type TTrainNumber = string;
 type TFromId = number;
 type TToId = number;
 type TDate = string;
