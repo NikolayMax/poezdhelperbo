@@ -1,11 +1,11 @@
-import {Telegraf} from "telegraf";
-import {CommandsName} from "../consts";
-import {Buttons} from "../command.button";
+import { Bot } from "@maxhub/max-bot-api";
+import { CommandsName } from "../consts";
+import { Buttons } from "../command.button";
 
-const action = (bot: Telegraf) => {
-    bot.action(CommandsName.Balance, (ctx) => {
-        const {text, buttons} = Buttons[CommandsName.Balance]()
-        ctx.reply(text, buttons);
+const action = (bot: Bot) => {
+    bot.action(CommandsName.Balance, async (ctx) => {
+        const {text, attachments} = await Buttons[CommandsName.Balance](ctx)
+        ctx.reply(text, { attachments });
     })
 }
 export default action;

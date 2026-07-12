@@ -1,18 +1,18 @@
-import {Telegraf} from "telegraf";
-import {Buttons} from "../command.button";
-import {CommandsName} from "../consts";
-import {userRedis} from "../redis";
+import { Bot } from "@maxhub/max-bot-api";
+import { Buttons } from "../command.button";
+import { CommandsName } from "../consts";
+import { userRedis } from "../redis";
 
-const actionDay = (bot: Telegraf) => {
-    bot.action(new RegExp(CommandsName.Day), async (ctx: any) => {
-        const userId = ctx.from.id;
+const actionDay = (bot: Bot) => {
+    bot.action(new RegExp(CommandsName.Day), async (ctx) => {
+        const userId = ctx.user!.user_id;
         const userData = await userRedis.getData(userId);
 
-        userData.selectedDay = Number(ctx.match[1]);
+        userData.selectedDay = Number(ctx.match![1]);
         await userRedis.setData(userId, userData);
 
-        const {text, buttons} = await Buttons[CommandsName.Watch](ctx);
-        ctx.reply(text, buttons)
+        const {text, attachments} = await Buttons[CommandsName.Watch](ctx);
+        ctx.reply(text, { attachments })
     })
 }
 

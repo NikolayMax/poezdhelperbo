@@ -1,13 +1,13 @@
 {
-  "name": "poezdhelperbot",
+  "name": "tuda-suda-bot",
   "version": "1.0.0",
-  "description": "",
+  "description": "Бот для поиска поездов и электричек в мессенджере Max",
   "main": "index.js",
   "scripts": {
     "lint": "eslint",
     "lint:fix": "eslint --fix",
     "build": "tsc",
-    "start": "node ./dist/index.js",
+    "start": "NODE_TLS_REJECT_UNAUTHORIZED=0 node ./dist/app.js",
     "start:dev": "nodemon src/app.ts"
   },
   "keywords": [],
@@ -16,9 +16,8 @@
   "type": "commonjs",
   "devDependencies": {
     "@eslint/js": "^9.37.0",
-    "@telegraf/types": "^9.2.1",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^24.7.0",
-    "@types/node-cron": "^3.0.11",
     "@types/redis": "^4.0.10",
     "eslint": "^9.37.0",
     "globals": "^16.4.0",
@@ -30,11 +29,11 @@
     "typescript-eslint": "^8.46.0"
   },
   "dependencies": {
+    "@maxhub/max-bot-api": "^0.2.4",
     "axios": "^1.12.2",
+    "better-sqlite3": "^12.11.1",
     "dotenv": "^17.2.3",
-    "node-cron": "^4.2.1",
-    "redis": "^5.8.3",
-    "telegraf": "^4.16.3"
+    "redis": "^5.8.3"
   },
   "lint-staged": {
     "**/*.{js,mjs,cjs,jsx,ts,mts,cts,tsx,vue,astro,svelte}": "oxlint"

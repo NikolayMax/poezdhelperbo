@@ -1,5 +1,3 @@
-import {CurrentSelectCity} from "../consts";
-
 interface ICity{
     id: number,
     name: string,
@@ -14,7 +12,22 @@ export interface IUserData{
     cityFrom?: ICity;
     cityTo?: ICity;
 
+    currentSelectCity?: 'from' | 'to';
+    cities?: ICity[];
 
-    currentSelectCity?: CurrentSelectCity;
-    cities?: ICity[]
+    lastTrains?: Record<number, ITrain>;
+    lastSearchDate?: string;
+    lastSearchFromId?: number;
+    lastSearchToId?: number;
+}
+
+interface ITrain {
+    id: number;
+    train_number: string;
+    name: string;
+    departure_time: string;
+    arrival_time: string;
+    places_count: number | null;
+    station_from: string;
+    station_to: string;
 }

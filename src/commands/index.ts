@@ -10,6 +10,15 @@ import actionMonth from "./month.action";
 import actionDay from "./day.action";
 import {actionSelectCity} from "./select-city.action";
 import watchFindAction from "./watch-find.action";
+import buyAction from "./buy.action";
+import buyCommand from "./buy.command";
+import buyPackageAction from "./buy-package.action";
+import adminAction from "./admin.action";
+import helpAction from "./help.action";
+import watchPlaceAction from "./watch-place.action";
+import myTrainsAction from "./my-trains.action";
+import removeTrackAction from "./remove-track.action";
+import checkPaymentAction from "./check-payment.action";
 
 export const actions = [
     start,
@@ -22,11 +31,21 @@ export const actions = [
 
     watchAction,
     watchDateAction,
+    watchPlaceAction,
 
     Message,
     actionMonth,
     actionDay,
 
     actionSelectCity,
-    watchFindAction
+    watchFindAction,
+
+    buyAction,
+    buyCommand,
+    buyPackageAction,
+    adminAction,
+    helpAction,
+    myTrainsAction,
+    removeTrackAction,
+    checkPaymentAction,
 ]

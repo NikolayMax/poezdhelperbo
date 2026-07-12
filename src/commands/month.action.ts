@@ -1,18 +1,18 @@
-import {CommandsName} from "../consts";
-import { Telegraf} from "telegraf";
-import {Buttons} from "../command.button";
-import {userRedis} from "../redis";
+import { Bot } from "@maxhub/max-bot-api";
+import { CommandsName } from "../consts";
+import { Buttons } from "../command.button";
+import { userRedis } from "../redis";
 
-const actionMonth = (bot: Telegraf) => {
-    bot.action(new RegExp(CommandsName.Month), async (ctx: any) => {
-        const userId = ctx.from.id;
+const actionMonth = (bot: Bot) => {
+    bot.action(new RegExp(CommandsName.Month), async (ctx) => {
+        const userId = ctx.user!.user_id;
         const userData = await userRedis.getData(userId);
-        userData.selectedMonth = Number(ctx.match[1]);
+        userData.selectedMonth = Number(ctx.match![1]);
         await userRedis.setData(userId, userData);
 
-        const {text, buttons} = await Buttons[CommandsName.Month](ctx)
+        const {text, attachments} = await Buttons[CommandsName.Month](ctx)
 
-        ctx.reply(text, buttons)
+        ctx.reply(text, { attachments })
     })
 }
 

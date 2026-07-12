@@ -1,83 +1,113 @@
-import {CommandsName, MonthNameRus} from "./consts";
-import {Markup} from "telegraf";
-import {getLastDayOfMonth, renderSelectDate, renderSelectFromCity, renderSelectToCity} from "./lib";
-import {userRedis} from "./redis";
-import {Context} from "node:vm";
+import { Context, Keyboard } from "@maxhub/max-bot-api";
+import type { AttachmentRequest } from "@maxhub/max-bot-api/types";
+import { CommandsName, MonthNameRus, PACKAGES } from "./consts";
+import { getLastDayOfMonth, renderSelectDate, renderSelectFromCity, renderSelectToCity } from "./lib";
+import { userRedis } from "./redis";
+import { getBalance, checkAndExpirePaid, getTotalAvailable } from "./balance";
+
+type ButtonResult = { text: string; attachments?: AttachmentRequest[] };
 
 export const Buttons = {
-    [CommandsName.Start]: () => ({
+    [CommandsName.Start]: (): ButtonResult => ({
         text: 'Привет! Тут ты сможешь оследить свой поезд или электричку',
-        buttons: Markup.inlineKeyboard([
-            Markup.button.callback("Начать поиск", CommandsName.Watch),
-            Markup.button.callback("Баланс", CommandsName.Balance),
-            Markup.button.callback("Помощь", CommandsName.Help)
-        ])
+        attachments: [Keyboard.inlineKeyboard([
+            [Keyboard.button.callback("Начать поиск", CommandsName.Watch)],
+            [Keyboard.button.callback("🚂 Мои электрички", CommandsName.MyTrains)],
+            [Keyboard.button.callback("Баланс", CommandsName.Balance)],
+            [Keyboard.button.callback("Помощь", CommandsName.Help)]
+        ])]
     }),
-    [CommandsName.Balance]: () => ({
-        text: 'Ваш Баланс: 10 запросов',
-        buttons: Markup.inlineKeyboard([
-            Markup.button.callback("Главное меню", CommandsName.Start)
-        ])
-    }),
-    [CommandsName.CityFrom]: () => ({
+    [CommandsName.Balance]: async (ctx?: Context): Promise<ButtonResult> => {
+        const userId = ctx!.user!.user_id;
+        checkAndExpirePaid(userId);
+        const balance = getBalance(userId);
+        const total = getTotalAvailable(userId);
+
+        let text = `💳 Ваш баланс\n\n`;
+        text += `▫️ Бесплатных запросов: ${balance.freeRequests}\n`;
+        text += `▫️ Платных запросов: ${balance.paidRequestsRemaining}`;
+        if (balance.paidRequestsExpiry) {
+            const expiresAt = new Date(balance.paidRequestsExpiry);
+            text += `\n   (до ${expiresAt.toLocaleDateString('ru-RU')})`;
+        }
+        text += `\n\nВсего доступно: ${total}`;
+
+        return {
+            text,
+            attachments: [Keyboard.inlineKeyboard([
+                [Keyboard.button.callback("Купить запросы", CommandsName.Buy)],
+                [Keyboard.button.callback("🚂 Мои электрички", CommandsName.MyTrains)],
+                [Keyboard.button.callback("Главное меню", CommandsName.Start)]
+            ])]
+        };
+    },
+    [CommandsName.CityFrom]: (): ButtonResult => ({
         text: 'Введите город откуда:',
     }),
-    [CommandsName.CityTo]: () => ({
+    [CommandsName.CityTo]: (): ButtonResult => ({
         text: 'Введите город куда:',
     }),
-    [CommandsName.WatchDate]: async (ctx: Context)=> {
-        const  months = [];
-        const userId = ctx.from.id;
+    [CommandsName.WatchDate]: async (ctx?: Context): Promise<ButtonResult> => {
+        const userId = ctx!.user!.user_id;
         const {selectedMonth} = await userRedis.getData(userId);
 
+        const monthRows = [];
         for(let i = selectedMonth ? selectedMonth : 0 ; i < 12; i++){
-            console.log(MonthNameRus[i])
-            months.push(Markup.button.callback(MonthNameRus[i], `month:${i}`))
+            monthRows.push([Keyboard.button.callback(MonthNameRus[i], `month:${i}`)])
         }
         return {
             text: 'Выберите месяц: ',
-            buttons: Markup.inlineKeyboard(months, {columns: 4})
+            attachments: [Keyboard.inlineKeyboard(monthRows)]
         }
     },
-    [CommandsName.Watch]: async (ctx: Context) => {
-        const userId = ctx.from.id;
+    [CommandsName.Watch]: async (ctx?: Context): Promise<ButtonResult> => {
+        const userId = ctx!.user!.user_id;
         const userData = await userRedis.getData(userId);
 
         return {
             text: 'Параметры поиска: ',
-            buttons: Markup.inlineKeyboard([
-                [Markup.button.callback(renderSelectDate(userData), CommandsName.WatchDate)],
-                [Markup.button.callback(renderSelectFromCity(userData), CommandsName.CityFrom)],
-                [Markup.button.callback(renderSelectToCity(userData), CommandsName.CityTo)],
-                [Markup.button.callback("НАЙТИ", CommandsName.WatchFind)],
-                [Markup.button.callback("Главное меню", CommandsName.Start)]
-            ])
+            attachments: [Keyboard.inlineKeyboard([
+                [Keyboard.button.callback(renderSelectDate(userData), CommandsName.WatchDate)],
+                [Keyboard.button.callback(renderSelectFromCity(userData), CommandsName.CityFrom)],
+                [Keyboard.button.callback(renderSelectToCity(userData), CommandsName.CityTo)],
+                [Keyboard.button.callback("НАЙТИ", CommandsName.WatchFind)],
+                [Keyboard.button.callback("Главное меню", CommandsName.Start)]
+            ])]
         }
     },
-    [CommandsName.Month]: async (ctx: Context) => {
-        const days = [];
-
+    [CommandsName.Month]: async (ctx?: Context): Promise<ButtonResult> => {
         const now = new Date()
-
         const currentMonth = now.getMonth();
-        const userId = ctx.from.id;
+        const userId = ctx!.user!.user_id;
         const {selectedYear, selectedMonth, selectedDay} = await userRedis.getData(userId);
         const endDay = getLastDayOfMonth(selectedYear, selectedMonth);
 
+        const dayRows = [];
         for(let i = currentMonth === selectedMonth? selectedDay : 1; i <= endDay; i++){
-            days.push(Markup.button.callback(`${i}`, `day:${i}`))
+            dayRows.push([Keyboard.button.callback(`${i}`, `day:${i}`)])
         }
 
         return {
             text: 'Выберите день: ',
-            buttons: Markup.inlineKeyboard(days, {columns: 7})
+            attachments: [Keyboard.inlineKeyboard(dayRows)]
         }
     },
-    [CommandsName.Message]: () => ({text: 'Выберите город:'}),
-    [CommandsName.WatchFind]: () => {
+    [CommandsName.Message]: (): ButtonResult => ({text: 'Выберите город:'}),
+    [CommandsName.WatchFind]: (): ButtonResult => {
         return {
             text: '',
-            buttons: Markup.inlineKeyboard([], {columns: 7})
+            attachments: [Keyboard.inlineKeyboard([])]
         }
+    },
+    [CommandsName.Buy]: (): ButtonResult => {
+        const rows = PACKAGES.map((pkg) => [
+            Keyboard.button.callback(`${pkg.label} — ${pkg.price}₽`, `buy-package:${pkg.key}`)
+        ]);
+        rows.push([Keyboard.button.callback("Главное меню", CommandsName.Start)]);
+
+        return {
+            text: '📦 Выберите пакет запросов\n\nСрок действия купленных запросов — 30 дней.',
+            attachments: [Keyboard.inlineKeyboard(rows)]
+        };
     }
 }

@@ -1,14 +1,12 @@
-import {Telegraf} from "telegraf";
-import {CommandsName, CurrentSelectCity} from "../consts";
-import {Buttons} from "../command.button";
-import {userRedis} from "../redis";
+import { Bot } from "@maxhub/max-bot-api";
+import { CommandsName, CurrentSelectCity } from "../consts";
+import { Buttons } from "../command.button";
+import { userRedis } from "../redis";
 
-// Hello
-
-export const actionSelectCity = (bot: Telegraf) => {
+export const actionSelectCity = (bot: Bot) => {
     bot.action(new RegExp(CommandsName.SelectCity), async (ctx) => {
-        const slug = ctx.match[1];
-        const userId = ctx.from?.id;
+        const slug = ctx.match![1];
+        const userId = ctx.user!.user_id;
         const userData = await userRedis.getData(userId);
         const currentCity = userData?.cities?.find((city) => city.slug === slug)
 
@@ -20,7 +18,7 @@ export const actionSelectCity = (bot: Telegraf) => {
 
         await userRedis.setData(userId, userData);
 
-        const {text, buttons} = await Buttons[CommandsName.Watch](ctx)
-        ctx.reply(text, buttons)
+        const {text, attachments} = await Buttons[CommandsName.Watch](ctx)
+        ctx.reply(text, { attachments })
     });
 }
