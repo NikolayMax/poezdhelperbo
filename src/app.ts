@@ -5,7 +5,7 @@ import { Buttons } from "./command.button";
 import { CommandsName } from "./consts";
 import { startTracker } from "./tracker";
 import { createDependencies } from "./container";
-import { isUserRegistered, isUserSubscribed } from "./referral";
+import { isUserRegistered, isSubscribedToChannel, updateSubscriptionStatus } from "./referral";
 
 process.on('unhandledRejection', (reason) => {
     console.error('[UNHANDLED REJECTION]', reason instanceof Error ? `${reason.message}\n${reason.stack}` : reason);
@@ -34,7 +34,7 @@ function init() {
         console.log(`[BOT_STARTED] userId=${userId} payload=${payload || 'none'}`);
         if (payload?.startsWith('ref_')) {
             const referrerId = Number(payload.slice(4));
-            if (referrerId && referrerId !== userId) {
+            if (referrerId && referrerId !== userId && !isUserRegistered(userId)) {
                 const userData = await deps.redis.getData(userId);
                 userData.pendingReferral = referrerId;
                 await deps.redis.setData(userId, userData);
@@ -69,18 +69,42 @@ function init() {
             { name: 'start', description: 'Главное меню' },
         ]);
 
-        if (process.env.CHANNEL_ID && !isUserSubscribed(userId)) {
-            const { text, attachments } = Buttons.SubscriptionPrompt();
-            ctx.reply(text, { attachments });
-            return;
+        if (process.env.CHANNEL_ID) {
+            const subscribed = await isSubscribedToChannel(userId, process.env.CHANNEL_ID, bot);
+            updateSubscriptionStatus(userId, subscribed ? 1 : 0);
+            if (!subscribed) {
+                const { text, attachments } = Buttons.SubscriptionPrompt();
+                ctx.reply(text, { attachments });
+                return;
+            }
         }
 
         const { text, attachments } = await Buttons[CommandsName.Start](ctx);
         ctx.reply(text, { attachments });
     });
 
-    bot.on('message_callback', (ctx, next) => {
+    bot.on('message_callback', async (ctx, next) => {
         ctx.answerOnCallback({ notification: '' }).catch((err) => console.error('[ANSWER CALLBACK]', err));
+
+        const userId = ctx.user?.user_id;
+        const channelId = process.env.CHANNEL_ID;
+        const payload = (ctx.update as any)?.callback?.payload as string | undefined;
+
+        const skipCheck = !channelId || !userId
+            || payload === 'check-subscription'
+            || payload === 'noop'
+            || payload === 'start';
+
+        if (!skipCheck) {
+            const subscribed = await isSubscribedToChannel(userId, channelId, bot);
+            updateSubscriptionStatus(userId, subscribed ? 1 : 0);
+            if (!subscribed) {
+                const { text, attachments } = Buttons.SubscriptionPrompt();
+                ctx.reply(text, { attachments });
+                return;
+            }
+        }
+
         return next();
     })
 
@@ -96,6 +120,7 @@ function init() {
                 userId,
                 `🚂 <b>${track.train_number}</b> — ${track.train_name}\n<b>💺 Появились свободные места 🔥 Успей купить!!!</b>\n📅 ${track.date}  🕒 ${track.departure_time} → ${track.arrival_time}\n\n⚠️ Уведомление получили и другие пользователи.\nУспейте занять место!`,
                 { format: 'html', attachments: [Keyboard.inlineKeyboard([
+                    [Keyboard.button.link("Купить билет", "https://www.svrpk.ru/")],
                     [Keyboard.button.callback("Главное меню", CommandsName.Start)],
                 ])] }
             ).catch((err) => console.error('[NOTIFY] sendMessageToUser:', err));

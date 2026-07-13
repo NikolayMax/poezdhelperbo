@@ -58,10 +58,13 @@ const action = (bot: Bot) => {
                     `💺 ${train.places_count != null ? `${train.places_count} мест` : '❌ Мест нет'}`;
 
                 const alreadyTracked = isTrainTracked(userId, train.id, dateStr, cityFrom.id, cityTo.id);
+                const hasPlaces = train.places_count != null && train.places_count > 0;
                 const keyboard = Keyboard.inlineKeyboard(
                     alreadyTracked
                         ? [[Keyboard.button.callback("✅ Уже отслеживается", "noop")]]
-                        : [[Keyboard.button.callback("Отследить место", `watch-place:${train.id}`)]]
+                        : hasPlaces
+                            ? [[Keyboard.button.link("💺 Места есть — покупайте!", "https://www.svrpk.ru/")]]
+                            : [[Keyboard.button.callback("Отследить место", `watch-place:${train.id}`)]]
                 );
 
                 ctx.reply(msg, { format: 'html', attachments: [keyboard] });
