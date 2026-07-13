@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import axios from 'axios';
 import { getDb } from '../database';
-import { addPaidRequests } from '../balance';
+import { ensureUser, addPaidRequests } from '../balance';
 import { PACKAGES } from '../consts';
 
 const API_URL = 'https://securepay.tinkoff.ru';
@@ -88,6 +88,7 @@ export async function createPayment(userId: number, packageKey: string): Promise
     );
   }
 
+  ensureUser(userId);
   const db = getDb();
   const result = db.prepare(`
     INSERT INTO payments (user_id, package_key, amount, tinkoff_payment_id, tinkoff_order_id)
@@ -139,14 +140,8 @@ export async function checkPayment(paymentId: number, userId: number): Promise<{
     }
 
     return { confirmed: false, message: `⏳ Статус платежа: ${data.Status}. Попробуйте позже.` };
-  } catch {
+  } catch (err: any) {
+    console.error('[TINKOFF] CheckPayment error:', err?.message ?? err, err?.response?.data ?? '');
     return { confirmed: false, message: '❌ Ошибка при проверке платежа. Попробуйте позже.' };
   }
-}
-
-export function getPendingPayments(userId: number): IPaymentRecord[] {
-  const db = getDb();
-  return db.prepare(`
-    SELECT * FROM payments WHERE user_id = ? AND status = 'pending' ORDER BY created_at DESC
-  `).all(userId) as IPaymentRecord[];
 }

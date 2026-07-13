@@ -25,11 +25,13 @@ const action = (bot: Bot) => {
                 { headers: { 'X-Requested-With': 'XMLHttpRequest' } }
             );
 
-            if (data.data.length === 0) {
-                return ctx.reply('😕 Поездов не найдено. Попробуйте другие даты или направления.');
+            const lastochki = data.data.filter(t => t.rail_type === 'Комфортный');
+
+            if (lastochki.length === 0) {
+                return ctx.reply('😕 Ласточки не найдены. Попробуйте другие даты или направления.');
             }
 
-            userData.lastTrains = data.data.reduce((acc: Record<number, ITrain>, t) => {
+            userData.lastTrains = lastochki.reduce((acc: Record<number, ITrain>, t) => {
                 acc[t.id] = t;
                 return acc;
             }, {});
@@ -38,9 +40,9 @@ const action = (bot: Bot) => {
             userData.lastSearchToId = cityTo.id;
             await userRedis.setData(userId, userData);
 
-            for (const train of data.data) {
-                const [dh, dm] = train.departure_time.split(':').map(Number);
-                const [ah, am] = train.arrival_time.split(':').map(Number);
+            for (const train of lastochki) {
+                const [dh, dm] = train.departure_time.split(':').map(Number) as [number, number];
+                const [ah, am] = train.arrival_time.split(':').map(Number) as [number, number];
                 let diff = (ah * 60 + am) - (dh * 60 + dm);
                 if (diff < 0) diff += 24 * 60;
                 const travelTime = `${Math.floor(diff / 60)}ч ${diff % 60}м`;
@@ -56,6 +58,7 @@ const action = (bot: Bot) => {
 
                 ctx.reply(msg, { format: 'html', attachments: [keyboard] });
             }
+            return;
         } catch (error) {
             console.error('Ошибка при поиске поездов:', error);
             return ctx.reply('❌ Не удалось получить данные. Попробуйте позже.');

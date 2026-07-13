@@ -46,7 +46,7 @@ const action = (bot: Bot) => {
             [Keyboard.button.callback("🚂 Мои электрички", CommandsName.MyTrains)],
         ]);
 
-        ctx.reply(
+        return ctx.reply(
             `✅ Поезд <b>${train.train_number}</b> добавлен в отслеживание!\n` +
             `Мы уведомим вас, когда появятся свободные места.`,
             { format: 'html', attachments: [keyboard] }

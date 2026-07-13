@@ -1,14 +1,15 @@
 {
   "name": "tuda-suda-bot",
   "version": "1.0.0",
-  "description": "Бот для поиска поездов и электричек в мессенджере Max",
+  "description": "╨С╨╛╤В ╨┤╨╗╤П ╨┐╨╛╨╕╤Б╨║╨░ ╨┐╨╛╨╡╨╖╨┤╨╛╨▓ ╨╕ ╤Н╨╗╨╡╨║╤В╤А╨╕╤З╨╡╨║ ╨▓ ╨╝╨╡╤Б╤Б╨╡╨╜╨┤╨╢╨╡╤А╨╡ Max",
   "main": "index.js",
   "scripts": {
     "lint": "eslint",
     "lint:fix": "eslint --fix",
     "build": "tsc",
-    "start": "NODE_TLS_REJECT_UNAUTHORIZED=0 node ./dist/app.js",
-    "start:dev": "nodemon src/app.ts"
+    "start": "cross-env NODE_TLS_REJECT_UNAUTHORIZED=0 node ./dist/app.js",
+    "start:dev": "cross-env NODE_TLS_REJECT_UNAUTHORIZED=0 nodemon src/app.ts",
+    "db:view": "cross-env NODE_TLS_REJECT_UNAUTHORIZED=0 ts-node ./sqlite-viewer.ts"
   },
   "keywords": [],
   "author": "",
@@ -17,9 +18,13 @@
   "devDependencies": {
     "@eslint/js": "^9.37.0",
     "@types/better-sqlite3": "^7.6.13",
+    "@types/express": "^5.0.6",
     "@types/node": "^24.7.0",
     "@types/redis": "^4.0.10",
+    "cross-env": "^10.1.0",
     "eslint": "^9.37.0",
+    "eslint-config-prettier": "^10.1.8",
+    "express": "^5.2.1",
     "globals": "^16.4.0",
     "jiti": "^2.6.1",
     "nodemon": "^3.1.10",

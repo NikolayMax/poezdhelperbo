@@ -38,7 +38,7 @@ const DELETE_TRACK = `
   WHERE id = ? AND user_id = ?
 `;
 
-const SELECT_ALL = `
+const SELECT_ACTIVE = `
   SELECT * FROM tracked_trains
   WHERE datetime(date || ' ' || departure_time) > datetime('now', '-3 hours')
 `;
@@ -87,7 +87,7 @@ export function removeTrack(id: number, userId: number): boolean {
 
 export function getActiveTracks(): ITrackedTrain[] {
   const db = getDb();
-  return db.prepare(SELECT_ALL).all() as ITrackedTrain[];
+  return db.prepare(SELECT_ACTIVE).all() as ITrackedTrain[];
 }
 
 export function updatePlaces(id: number, placesCount: number | null, notified: number): void {
@@ -97,12 +97,24 @@ export function updatePlaces(id: number, placesCount: number | null, notified: n
 
 export function startTracker(
   notifyFn: (userId: number, track: ITrackedTrain) => void,
+  expiryFn: (userId: number, track: ITrackedTrain) => void,
 ): void {
+  const MINUTES_15 = 15 * 60 * 1000;
+  const EXPIRY_THRESHOLD = 3 * 60 * 60 * 1000;
+
   const check = async () => {
     try {
       const tracks = getActiveTracks();
       for (const track of tracks) {
         try {
+          const departureTime = new Date(`${track.date.replace(/-/g, '/')}T${track.departure_time}`);
+          if (Date.now() - departureTime.getTime() > EXPIRY_THRESHOLD) {
+            console.log('[TRACKER] Expired track', track.train_number, 'for user', track.user_id);
+            expiryFn(track.user_id, track);
+            removeTrack(track.id, track.user_id);
+            continue;
+          }
+
           const dateStr = track.date;
           const url = `https://api.svrpk.ru/api/v1/trains/find-by/stations/${track.station_from_id}/${track.station_to_id}?date=${dateStr}&count=20`;
           console.log('[TRACKER] Checking train', track.train_number, 'date:', track.date);
@@ -123,15 +135,15 @@ export function startTracker(
           } else {
             updatePlaces(track.id, places, track.notified ? 1 : 0);
           }
-        } catch {
-          // ignore per-track errors
+        } catch (err: any) {
+          console.error(`[TRACKER] Per-track error trainId=${track.train_id}:`, err?.message ?? err);
         }
       }
-    } catch {
-      // ignore overall errors
+    } catch (err: any) {
+      console.error('[TRACKER] Overall check error:', err?.message ?? err);
     }
   };
 
   check();
-  setInterval(check, 15 * 1000);
+  setInterval(check, MINUTES_15);
 }

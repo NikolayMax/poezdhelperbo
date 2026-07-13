@@ -1,3 +1,5 @@
+import { Bot } from "@maxhub/max-bot-api";
+import type { AppDependencies } from "../container";
 import start from "./start.action";
 import startCommand from "./start.command";
 import cityToAction from "./city-to.action";
@@ -19,8 +21,11 @@ import watchPlaceAction from "./watch-place.action";
 import myTrainsAction from "./my-trains.action";
 import removeTrackAction from "./remove-track.action";
 import checkPaymentAction from "./check-payment.action";
+import registerAction from "./register.action";
 
-export const actions = [
+type ActionFn = (bot: Bot, deps: AppDependencies) => void;
+
+export const actions: ActionFn[] = [
     start,
     startCommand,
 
@@ -48,4 +53,5 @@ export const actions = [
     myTrainsAction,
     removeTrackAction,
     checkPaymentAction,
-]
+    registerAction,
+];

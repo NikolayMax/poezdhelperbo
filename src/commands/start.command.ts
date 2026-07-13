@@ -4,7 +4,7 @@ import { Buttons } from "../command.button";
 
 const action = (bot: Bot) => {
     bot.command('start', async (ctx) => {
-        const {text, attachments} = await Buttons[CommandsName.Start]();
+        const {text, attachments} = await Buttons[CommandsName.Start](ctx);
         ctx.reply(text, { attachments });
     });
 }

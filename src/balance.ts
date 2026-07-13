@@ -54,6 +54,7 @@ function rowToBalance(row: { user_id: number; free_requests: number; paid_reques
 
 export function ensureUser(userId: number): void {
   const db = getDb();
+  db.prepare(`INSERT OR IGNORE INTO users (user_id) VALUES (?)`).run(userId);
   db.prepare(INSERT_IF_NOT_EXISTS).run(userId);
 }
 

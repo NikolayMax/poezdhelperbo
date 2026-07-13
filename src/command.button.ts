@@ -4,19 +4,29 @@ import { CommandsName, MonthNameRus, PACKAGES } from "./consts";
 import { getLastDayOfMonth, renderSelectDate, renderSelectFromCity, renderSelectToCity } from "./lib";
 import { userRedis } from "./redis";
 import { getBalance, checkAndExpirePaid, getTotalAvailable } from "./balance";
+import { getUserTracks } from "./tracker";
 
 type ButtonResult = { text: string; attachments?: AttachmentRequest[] };
 
 export const Buttons = {
-    [CommandsName.Start]: (): ButtonResult => ({
-        text: 'Привет! Тут ты сможешь оследить свой поезд или электричку',
-        attachments: [Keyboard.inlineKeyboard([
-            [Keyboard.button.callback("Начать поиск", CommandsName.Watch)],
-            [Keyboard.button.callback("🚂 Мои электрички", CommandsName.MyTrains)],
-            [Keyboard.button.callback("Баланс", CommandsName.Balance)],
-            [Keyboard.button.callback("Помощь", CommandsName.Help)]
-        ])]
-    }),
+    [CommandsName.Start]: async (ctx?: Context): Promise<ButtonResult> => {
+        const userId = ctx!.user!.user_id;
+        const total = getTotalAvailable(userId);
+        const tracks = getUserTracks(userId);
+        return {
+            text: `🚂 Привет! Я помогу найти и отследить Ласточки 🐦\n\n` +
+                  `📊 Твой профиль\n` +
+                  `   💳 Баланс запросов: ${total}\n` +
+                  `   🚂 Треков:   ${tracks.length}\n\n` +
+                  `Выбери действие 👇`,
+            attachments: [Keyboard.inlineKeyboard([
+                [Keyboard.button.callback("🔍 Начать поиск", CommandsName.Watch)],
+                [Keyboard.button.callback("🚂 Мои электрички", CommandsName.MyTrains)],
+                [Keyboard.button.callback("💳 Купить запросы", CommandsName.Buy)],
+                [Keyboard.button.callback("❓ Помощь", CommandsName.Help)],
+            ])]
+        };
+    },
     [CommandsName.Balance]: async (ctx?: Context): Promise<ButtonResult> => {
         const userId = ctx!.user!.user_id;
         checkAndExpirePaid(userId);
@@ -47,13 +57,12 @@ export const Buttons = {
     [CommandsName.CityTo]: (): ButtonResult => ({
         text: 'Введите город куда:',
     }),
-    [CommandsName.WatchDate]: async (ctx?: Context): Promise<ButtonResult> => {
-        const userId = ctx!.user!.user_id;
-        const {selectedMonth} = await userRedis.getData(userId);
-
+    [CommandsName.WatchDate]: async (_ctx?: Context): Promise<ButtonResult> => {
+        const currentMonth = new Date().getMonth();
         const monthRows = [];
-        for(let i = selectedMonth ? selectedMonth : 0 ; i < 12; i++){
-            monthRows.push([Keyboard.button.callback(MonthNameRus[i], `month:${i}`)])
+        for (let i = currentMonth; i < 12; i++) {
+            const label = i === currentMonth ? `📅 ${MonthNameRus[i]}` : (MonthNameRus[i] ?? `${i}`);
+            monthRows.push([Keyboard.button.callback(label, `month:${i}`)])
         }
         return {
             text: 'Выберите месяц: ',
@@ -76,37 +85,73 @@ export const Buttons = {
         }
     },
     [CommandsName.Month]: async (ctx?: Context): Promise<ButtonResult> => {
-        const now = new Date()
-        const currentMonth = now.getMonth();
         const userId = ctx!.user!.user_id;
-        const {selectedYear, selectedMonth, selectedDay} = await userRedis.getData(userId);
+        const {selectedYear, selectedMonth} = await userRedis.getData(userId);
         const endDay = getLastDayOfMonth(selectedYear, selectedMonth);
 
-        const dayRows = [];
-        for(let i = currentMonth === selectedMonth? selectedDay : 1; i <= endDay; i++){
-            dayRows.push([Keyboard.button.callback(`${i}`, `day:${i}`)])
+        const dayRows: any[] = [];
+
+        dayRows.push([
+            Keyboard.button.callback('📅 Сегодня', 'today'),
+            Keyboard.button.callback('📅 Завтра', 'tomorrow'),
+        ]);
+
+        dayRows.push(['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'].map(d => Keyboard.button.callback(d, 'noop')));
+
+        const firstDay = new Date(selectedYear, selectedMonth, 1).getDay();
+        const offset = firstDay === 0 ? 6 : firstDay - 1;
+
+        let row: { text: string; payload: string }[] = [];
+        for (let j = 0; j < offset; j++) {
+            row.push(Keyboard.button.callback('·', 'noop'));
+        }
+
+        for (let i = 1; i <= endDay; i++) {
+            row.push(Keyboard.button.callback(`${i}`, `day:${i}`));
+            if (row.length === 7) {
+                dayRows.push(row);
+                row = [];
+            }
+        }
+
+        if (row.length > 0) {
+            while (row.length < 7) {
+                row.push(Keyboard.button.callback('·', 'noop'));
+            }
+            dayRows.push(row);
         }
 
         return {
-            text: 'Выберите день: ',
+            text: 'Выберите день или Сегодня/Завтра: ',
             attachments: [Keyboard.inlineKeyboard(dayRows)]
         }
     },
     [CommandsName.Message]: (): ButtonResult => ({text: 'Выберите город:'}),
-    [CommandsName.WatchFind]: (): ButtonResult => {
+    [CommandsName.WatchFind]: (): ButtonResult => ({
+        text: '',
+    }),
+    SubscriptionPrompt: (): ButtonResult => {
+        const channelLink = process.env.CHANNEL_LINK || 'канал';
+        const text =
+            `📢 Для использования бота нужно подписаться на канал!\n\n` +
+            `${channelLink}\n\n` +
+            `После подписки нажмите кнопку ниже.`;
         return {
-            text: '',
-            attachments: [Keyboard.inlineKeyboard([])]
-        }
+            text,
+            attachments: [Keyboard.inlineKeyboard([
+                [Keyboard.button.callback("✅ Я подписался", "check-subscription")],
+            ])]
+        };
     },
     [CommandsName.Buy]: (): ButtonResult => {
         const rows = PACKAGES.map((pkg) => [
             Keyboard.button.callback(`${pkg.label} — ${pkg.price}₽`, `buy-package:${pkg.key}`)
         ]);
+        rows.push([Keyboard.button.callback("🤝 Пригласить друга", "referral-info")]);
         rows.push([Keyboard.button.callback("Главное меню", CommandsName.Start)]);
 
         return {
-            text: '📦 Выберите пакет запросов\n\nСрок действия купленных запросов — 30 дней.',
+            text: '📦 Выберите пакет запросов\n\nСрок действия купленных запросов — 30 дней.\n\n🤝 За каждого приглашённого друга вы получаете +3 запроса!',
             attachments: [Keyboard.inlineKeyboard(rows)]
         };
     }

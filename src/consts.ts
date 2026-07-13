@@ -20,7 +20,6 @@ export const CommandsName = {
     Buy: 'buy',
     BuyPackageSmall: 'buy-package:small',
     BuyPackageMedium: 'buy-package:medium',
-    BuyPackageLarge: 'buy-package:large',
 
     CheckPayment: '^check-payment:([0-9]+)$',
 
@@ -31,14 +30,13 @@ export const CommandsName = {
 } as const;
 
 export const PACKAGES = [
-    { key: 'small',  label: '10 запросов',  requests: 10,  price: 50 },
-    { key: 'medium', label: '50 запросов',  requests: 50,  price: 200 },
-    { key: 'large',  label: '200 запросов', requests: 200, price: 600 },
+    { key: 'small',  label: '10 запросов',  requests: 10,  price: 149 },
+    { key: 'medium', label: '50 запросов',  requests: 50,  price: 499 },
 ] as const;
 
 export const CurrentSelectCity = {
     From: 'from',
-    To: 'to'
+    To: 'to',
 } as const;
 
 export const MonthNameRus: string[] = [

@@ -42,7 +42,7 @@ const action = (bot: Bot) => {
                 `${status}\n\n`;
         }
 
-        ctx.reply(msg, {
+        return ctx.reply(msg, {
             format: 'html',
             attachments: [keyboard],
         });

@@ -23,5 +23,5 @@
 		"forceConsistentCasingInFileNames": true
 	},
 	"include": ["src/**/*"],
-	"exclude": ["node_modules", "dist", "coverage"]
+	"exclude": ["node_modules", "dist", "coverage", "src/bot", "src/decorator", "src/services", "src/types/bot.interface.ts"]
 }

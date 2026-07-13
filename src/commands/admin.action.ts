@@ -17,7 +17,7 @@ const action = (bot: Bot) => {
 
         addPaidRequests(targetUserId, count);
 
-        ctx.reply(
+        return ctx.reply(
             `✅ Пользователю ${targetUserId} добавлено ${count} запросов.`
         );
     });

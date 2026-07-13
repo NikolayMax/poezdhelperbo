@@ -21,14 +21,25 @@ export function getDb(): Database.Database {
 }
 
 function initSchema() {
+  db.pragma('foreign_keys = ON');
+
   db.exec(`
+    CREATE TABLE IF NOT EXISTS users (
+      user_id       INTEGER PRIMARY KEY,
+      phone         TEXT,
+      name          TEXT,
+      subscribed    INTEGER NOT NULL DEFAULT 0,
+      registered_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
     CREATE TABLE IF NOT EXISTS user_balance (
       user_id                INTEGER PRIMARY KEY,
       free_requests          INTEGER NOT NULL DEFAULT 3,
       paid_requests_remaining INTEGER NOT NULL DEFAULT 0,
       paid_requests_expiry   INTEGER,
       created_at             TEXT NOT NULL DEFAULT (datetime('now')),
-      updated_at             TEXT NOT NULL DEFAULT (datetime('now'))
+      updated_at             TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(user_id)
     );
 
     CREATE TABLE IF NOT EXISTS tracked_trains (
@@ -44,7 +55,18 @@ function initSchema() {
       station_to_id     INTEGER NOT NULL,
       last_places_count INTEGER,
       notified          INTEGER NOT NULL DEFAULT 0,
-      created_at        TEXT NOT NULL DEFAULT (datetime('now'))
+      created_at        TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(user_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS referrals (
+      id            INTEGER PRIMARY KEY AUTOINCREMENT,
+      referrer_id   INTEGER NOT NULL,
+      referred_id   INTEGER NOT NULL UNIQUE,
+      bonus_granted INTEGER NOT NULL DEFAULT 0,
+      created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (referrer_id) REFERENCES users(user_id),
+      FOREIGN KEY (referred_id) REFERENCES users(user_id)
     );
 
     CREATE TABLE IF NOT EXISTS payments (
@@ -55,7 +77,26 @@ function initSchema() {
       tinkoff_payment_id TEXT NOT NULL,
       tinkoff_order_id   TEXT NOT NULL UNIQUE,
       status             TEXT NOT NULL DEFAULT 'pending',
-      created_at         TEXT NOT NULL DEFAULT (datetime('now'))
+      created_at         TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (user_id) REFERENCES users(user_id)
     );
   `);
+
+  migrateExistingUsers();
+}
+
+function migrateExistingUsers() {
+  const rows = db.prepare(`
+    SELECT ub.user_id FROM user_balance ub
+    LEFT JOIN users u ON u.user_id = ub.user_id
+    WHERE u.user_id IS NULL
+  `).all() as { user_id: number }[];
+
+  const insert = db.prepare(`INSERT OR IGNORE INTO users (user_id) VALUES (?)`);
+  for (const row of rows) {
+    insert.run(row.user_id);
+  }
+  if (rows.length > 0) {
+    console.log(`[MIGRATE] Created ${rows.length} user records for existing users`);
+  }
 }

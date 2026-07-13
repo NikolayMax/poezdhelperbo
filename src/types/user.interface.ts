@@ -1,24 +1,23 @@
-import { ICity } from './city.interface';
-import { CurrentSelectCity } from '../bot/select-city/consts';
-import { TKeyRoute } from './schedule.interface';
+import type { ITrain } from './traine.interface';
 
-export interface IUserSchedule {
-	routeId: TKeyRoute;
-	startTime: string; // ISO string
-	spentSeconds: number;
+export interface ICity {
+  name: string;
+  slug: string;
+  id: number;
+  entity_type_id: number;
 }
 
 export interface IUserData {
-	chatId?: number;
-	selectedYear: number;
-	selectedMonth: number;
-	selectedDay: number;
-
-	cityFrom?: ICity;
-	cityTo?: ICity;
-
-	currentSelectCity?: CurrentSelectCity;
-	cities: ICity[];
-	activeSchedules: IUserSchedule[];
-	messageIds: number[];
+  currentSelectCity?: 'from' | 'to';
+  cities: ICity[];
+  cityFrom?: ICity;
+  cityTo?: ICity;
+  selectedYear: number;
+  selectedMonth: number;
+  selectedDay: number;
+  lastTrains?: Record<number, ITrain>;
+  lastSearchDate?: string;
+  lastSearchFromId?: number;
+  lastSearchToId?: number;
+  pendingReferral?: number;
 }
