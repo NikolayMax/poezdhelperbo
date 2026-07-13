@@ -30,6 +30,8 @@ export function registerUser(userId: number, phone: string, name: string | null)
     INSERT OR IGNORE INTO user_balance (user_id, free_requests)
     VALUES (?, 3)
   `).run(userId);
+
+  console.log(`[REGISTER] userId=${userId} phone=${phone} name=${name}`);
 }
 
 export function getReferralCode(userId: number): string {
@@ -98,5 +100,6 @@ export function applyReferralBonus(referrerId: number, referredId: number): bool
     WHERE user_id = ?
   `).run(referredId);
 
+  console.log(`[REFERRAL] bonus granted referrerId=${referrerId} referredId=${referredId}`);
   return true;
 }

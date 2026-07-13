@@ -40,7 +40,7 @@ const DELETE_TRACK = `
 
 const SELECT_ACTIVE = `
   SELECT * FROM tracked_trains
-  WHERE datetime(date || ' ' || departure_time) > datetime('now', '-3 hours')
+  WHERE datetime(date || ' ' || departure_time) >= datetime('now', '-1 hours')
 `;
 
 const CHECK_TRACKED = `
@@ -71,6 +71,7 @@ export function addTrack(
     userId, trainId, trainNumber, trainName, date, departureTime, arrivalTime,
     stationFromId, stationToId, placesCount,
   );
+  console.log(`[TRACKER] addTrack userId=${userId} trainId=${trainId} train=${trainNumber} date=${date}`);
   return Number(result.lastInsertRowid);
 }
 
@@ -110,44 +111,65 @@ export function startTracker(
   notifyFn: (userId: number, track: ITrackedTrain) => void,
   expiryFn: (userId: number, track: ITrackedTrain) => void,
 ): void {
-  const MINUTES_15 = 15 * 60 * 1000;
-  const EXPIRY_THRESHOLD = 3 * 60 * 60 * 1000;
+  const TRACKER_INTERVAL = 10 * 1000;
+  const EXPIRY_THRESHOLD = 60 * 60 * 1000;
 
   const check = async () => {
     try {
       const tracks = getActiveTracks();
+
+      const groups = new Map<string, ITrackedTrain[]>();
       for (const track of tracks) {
-        try {
+        const key = `${track.station_from_id}:${track.station_to_id}:${track.date}`;
+        const arr = groups.get(key) ?? [];
+        arr.push(track);
+        groups.set(key, arr);
+      }
+
+      for (const group of groups.values()) {
+        const alive: ITrackedTrain[] = [];
+
+        for (const track of group) {
           const departureTime = new Date(`${track.date.replace(/-/g, '/')}T${track.departure_time}`);
           if (Date.now() - departureTime.getTime() > EXPIRY_THRESHOLD) {
             console.log('[TRACKER] Expired track', track.train_number, 'for user', track.user_id);
             expiryFn(track.user_id, track);
             removeTrack(track.id, track.user_id);
-            continue;
+          } else {
+            alive.push(track);
           }
+        }
 
-          const dateStr = track.date;
-          const url = `https://api.svrpk.ru/api/v1/trains/find-by/stations/${track.station_from_id}/${track.station_to_id}?date=${dateStr}&count=20`;
-          console.log('[TRACKER] Checking train', track.train_number, 'date:', track.date);
+        if (alive.length === 0) continue;
+
+        const sample = alive[0]!;
+        const groupKey = `${sample.station_from_id}:${sample.station_to_id}:${sample.date}`;
+        const url = `https://api.svrpk.ru/api/v1/trains/find-by/stations/${sample.station_from_id}/${sample.station_to_id}?date=${sample.date}&count=20`;
+
+        try {
           const { data } = await axios.get<{ data: { id: number; places_count: number | null }[] }>(url, {
             headers: { 'X-Requested-With': 'XMLHttpRequest' },
           });
 
-          const trainInfo = data.data.find((t) => t.id === track.train_id);
-          if (!trainInfo) continue;
+          for (const trainInfo of data.data) {
+            const matching = alive.filter(t => t.train_id === trainInfo.id);
+            if (matching.length === 0) continue;
 
-          const places = trainInfo.places_count;
-          console.log('[TRACKER] Train', track.train_number, 'places:', places);
+            const places = trainInfo.places_count;
+            for (const track of matching) {
+              console.log('[TRACKER] Train', track.train_number, 'places:', places);
 
-          if (!track.notified && places != null && places > 0) {
-            console.log('[TRACKER] Notification sent for', track.train_number, 'to user', track.user_id);
-            notifyFn(track.user_id, track);
-            updatePlaces(track.id, places, 1);
-          } else {
-            updatePlaces(track.id, places, track.notified ? 1 : 0);
+              if (!track.notified && places != null && places > 0) {
+                console.log('[TRACKER] Notification sent for', track.train_number, 'to user', track.user_id);
+                notifyFn(track.user_id, track);
+                removeTrack(track.id, track.user_id);
+              } else {
+                updatePlaces(track.id, places, track.notified ? 1 : 0);
+              }
+            }
           }
         } catch (err: any) {
-          console.error(`[TRACKER] Per-track error trainId=${track.train_id}:`, err?.message ?? err);
+          console.error(`[TRACKER] Group error key=${groupKey}:`, err?.message ?? err);
         }
       }
     } catch (err: any) {
@@ -156,5 +178,5 @@ export function startTracker(
   };
 
   check();
-  setInterval(check, MINUTES_15);
+  setInterval(check, TRACKER_INTERVAL);
 }

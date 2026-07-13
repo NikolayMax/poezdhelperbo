@@ -36,6 +36,7 @@ const action = (bot: Bot, deps: AppDependencies) => {
             }
 
             const { phone, name } = parseVcf(payload.vcf_info);
+            console.log(`[CONTACT] userId=${userId} phone=${phone} name=${name}`);
             registerUser(userId, phone, name);
 
             if (process.env.CHANNEL_ID) {
@@ -69,6 +70,7 @@ const action = (bot: Bot, deps: AppDependencies) => {
 
             userData.cities = cities;
             await deps.redis.setData(userId, userData);
+            console.log(`[CITY SEARCH] userId=${userId} query=${text} found=${cities.length}`);
             try { await ctx.deleteMessage(); } catch (err: any) { console.error('[DELETE MESSAGE]', err?.message ?? err); }
             const result = await Buttons[CommandsName.Message]()
             ctx.reply(result.text, {
@@ -77,7 +79,7 @@ const action = (bot: Bot, deps: AppDependencies) => {
                 )]
             });
         } catch (error) {
-            console.error('Ошибка при поиске города:', error);
+            console.error(`[CITY SEARCH] userId=${userId} query=${text}:`, error);
             ctx.reply('❌ Не удалось найти город. Попробуйте позже.');
         }
     });

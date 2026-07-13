@@ -6,7 +6,7 @@ const action = (bot: Bot) => {
     bot.action(CommandsName.MyTrains, async (ctx) => {
         const userId = ctx.user?.user_id;
         if (!userId) {
-            await ctx.answerOnCallback({ notification: '❌ Ошибка авторизации' }).catch(() => {});
+            await ctx.answerOnCallback({ notification: '❌ Ошибка авторизации' }).catch((err) => console.error(`[AUTH GUARD]`, err));
             return;
         }
         const tracks = getUserTracks(userId);

@@ -8,6 +8,8 @@ const action = (bot: Bot) => {
         const userId = ctx.message?.sender?.user_id;
         if (!userId) return;
 
+        console.log(`[/START] userId=${userId}`);
+
         if (!isUserRegistered(userId)) {
             const keyboard = Keyboard.inlineKeyboard([
                 [Keyboard.button.requestContact("📱 Поделиться контактом")],

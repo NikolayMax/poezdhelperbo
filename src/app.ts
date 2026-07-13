@@ -31,12 +31,14 @@ function init() {
         if (!userId) return;
 
         const payload = ctx.startPayload;
+        console.log(`[BOT_STARTED] userId=${userId} payload=${payload || 'none'}`);
         if (payload?.startsWith('ref_')) {
             const referrerId = Number(payload.slice(4));
             if (referrerId && referrerId !== userId) {
                 const userData = await deps.redis.getData(userId);
                 userData.pendingReferral = referrerId;
                 await deps.redis.setData(userId, userData);
+                console.log(`[BOT_STARTED] userId=${userId} pendingReferral=${referrerId}`);
             }
         }
 
@@ -56,9 +58,7 @@ function init() {
         }
 
         bot.api.setMyCommands([
-            { name: 'start',   description: 'Перезапустить бота' },
-            { name: 'help',    description: 'Помощь' },
-            { name: 'balance', description: 'Проверить баланс' },
+            { name: 'start', description: 'Главное меню' },
         ]);
 
         if (process.env.CHANNEL_ID && !isUserSubscribed(userId)) {

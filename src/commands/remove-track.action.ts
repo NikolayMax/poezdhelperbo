@@ -6,7 +6,7 @@ const action = (bot: Bot) => {
     bot.action(new RegExp(CommandsName.RemoveTrack), async (ctx) => {
         const userId = ctx.user?.user_id;
         if (!userId) {
-            await ctx.answerOnCallback({ notification: '❌ Ошибка авторизации' }).catch(() => {});
+            await ctx.answerOnCallback({ notification: '❌ Ошибка авторизации' }).catch((err) => console.error(`[AUTH GUARD]`, err));
             return;
         }
         const trackId = Number(ctx.match?.[1]);
@@ -17,6 +17,7 @@ const action = (bot: Bot) => {
             return;
         }
 
+        console.log(`[REMOVE-TRACK] userId=${userId} trackId=${trackId} train=${track.train_number}`);
         removeTrack(trackId, userId);
 
         ctx.reply(`❌ Отслеживание поезда <b>${track.train_number}</b> удалено.`, {

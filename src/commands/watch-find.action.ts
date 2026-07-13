@@ -9,7 +9,7 @@ const action = (bot: Bot) => {
     bot.action(CommandsName.WatchFind, async (ctx) => {
         const userId = ctx.user?.user_id;
         if (!userId) {
-            await ctx.answerOnCallback({ notification: '❌ Ошибка авторизации' }).catch(() => {});
+            await ctx.answerOnCallback({ notification: '❌ Ошибка авторизации' }).catch((err) => console.error(`[AUTH GUARD]`, err));
             return;
         }
         const userData = await userRedis.getData(userId);
@@ -68,7 +68,7 @@ const action = (bot: Bot) => {
             }
             return;
         } catch (error) {
-            console.error('Ошибка при поиске поездов:', error);
+            console.error(`[WATCH-FIND] userId=${userId} date=${dateStr}:`, error);
             return ctx.reply('❌ Не удалось получить данные. Попробуйте позже.');
         }
     })

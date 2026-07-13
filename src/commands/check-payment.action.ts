@@ -6,13 +6,14 @@ const action = (bot: Bot) => {
     bot.action(new RegExp(CommandsName.CheckPayment), async (ctx) => {
         const userId = ctx.user?.user_id;
         if (!userId) {
-            await ctx.answerOnCallback({ notification: '❌ Ошибка авторизации' }).catch(() => {});
+            await ctx.answerOnCallback({ notification: '❌ Ошибка авторизации' }).catch((err) => console.error(`[AUTH GUARD]`, err));
             return;
         }
         const paymentId = Number(ctx.match?.[1]);
         if (!paymentId) return;
 
         const { confirmed, message } = await checkPayment(paymentId, userId);
+        console.log(`[CHECK-PAYMENT] userId=${userId} paymentId=${paymentId} confirmed=${confirmed}`);
 
         const attachments = confirmed
             ? [Keyboard.inlineKeyboard([

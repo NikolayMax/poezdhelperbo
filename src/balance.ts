@@ -88,6 +88,7 @@ export function deductRequest(userId: number): IDeductResult {
   `).run(userId);
 
   if (freeResult.changes > 0) {
+    console.log(`[BALANCE] deductRequest userId=${userId} source=free`);
     return { success: true, source: 'free' };
   }
 
@@ -99,9 +100,11 @@ export function deductRequest(userId: number): IDeductResult {
   `).run(userId, Date.now());
 
   if (paidResult.changes > 0) {
+    console.log(`[BALANCE] deductRequest userId=${userId} source=paid`);
     return { success: true, source: 'paid' };
   }
 
+  console.log(`[BALANCE] deductRequest userId=${userId} source=none (no requests left)`);
   return { success: false, source: null };
 }
 
@@ -114,6 +117,7 @@ export function addPaidRequests(userId: number, count: number): void {
   const newExpiry = Date.now() + THIRTY_DAYS_MS;
 
   db.prepare(UPDATE_PAID).run(newRemaining, newExpiry, userId);
+  console.log(`[BALANCE] addPaidRequests userId=${userId} count=${count} newRemaining=${newRemaining}`);
 }
 
 export function getTotalAvailable(userId: number): number {

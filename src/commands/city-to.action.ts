@@ -8,7 +8,7 @@ const action = (bot: Bot) => {
         const {text} = await Buttons[CommandsName.CityTo]();
         const userId = ctx.user?.user_id;
         if (!userId) {
-            await ctx.answerOnCallback({ notification: '❌ Ошибка авторизации' }).catch(() => {});
+            await ctx.answerOnCallback({ notification: '❌ Ошибка авторизации' }).catch((err) => console.error(`[AUTH GUARD]`, err));
             return;
         }
         const userData = await userRedis.getData(userId);

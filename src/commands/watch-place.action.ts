@@ -8,7 +8,7 @@ const action = (bot: Bot) => {
     bot.action(new RegExp(CommandsName.WatchPlace), async (ctx) => {
         const userId = ctx.user?.user_id;
         if (!userId) {
-            await ctx.answerOnCallback({ notification: '❌ Ошибка авторизации' }).catch(() => {});
+            await ctx.answerOnCallback({ notification: '❌ Ошибка авторизации' }).catch((err) => console.error(`[AUTH GUARD]`, err));
             return;
         }
         const trainId = Number(ctx.match?.[1]);
@@ -22,6 +22,7 @@ const action = (bot: Bot) => {
 
         const deduction = deductRequest(userId);
         if (!deduction.success) {
+            console.log(`[WATCH-PLACE] userId=${userId} trainId=${trainId} deduction=failed (no balance)`);
             return ctx.reply(
                 '❌ Лимит запросов исчерпан.\n\n' +
                 'Купить запросы — нажмите кнопку ниже.',
@@ -33,6 +34,7 @@ const action = (bot: Bot) => {
             );
         }
 
+        console.log(`[WATCH-PLACE] userId=${userId} trainId=${trainId} train=${train.train_number} deduction=${deduction.source}`);
         addTrack(
             userId,
             trainId,

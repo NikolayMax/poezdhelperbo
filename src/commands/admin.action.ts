@@ -8,7 +8,7 @@ const action = (bot: Bot) => {
     bot.action(new RegExp(CommandsName.AdminAddBalance), async (ctx) => {
         const userId = ctx.user?.user_id;
         if (!userId) {
-            await ctx.answerOnCallback({ notification: '❌ Ошибка авторизации' }).catch(() => {});
+            await ctx.answerOnCallback({ notification: '❌ Ошибка авторизации' }).catch((err) => console.error(`[AUTH GUARD]`, err));
             return;
         }
 
@@ -20,6 +20,7 @@ const action = (bot: Bot) => {
         const count = Number(ctx.match?.[2]);
         if (!targetUserId || !count) return;
 
+        console.log(`[ADMIN] adminUserId=${userId} addBalance targetUserId=${targetUserId} count=${count}`);
         addPaidRequests(targetUserId, count);
 
         return ctx.reply(

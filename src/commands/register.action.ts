@@ -56,6 +56,7 @@ const action = (bot: Bot, deps: AppDependencies) => {
             const userData = await deps.redis.getData(userId);
             const referrerId = userData.pendingReferral;
             if (referrerId && referrerId !== userId && applyReferralBonus(referrerId, userId)) {
+                console.log(`[CHECK-SUBSCRIPTION] userId=${userId} referralBonus=applied referrerId=${referrerId}`);
                 resultText += `🎉 Вы и ваш друг получили +3 запроса за реферала!\n\n`;
                 userData.pendingReferral = undefined;
                 await deps.redis.setData(userId, userData);

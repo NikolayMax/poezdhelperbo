@@ -7,7 +7,7 @@ const action = (bot: Bot) => {
         bot.action(`buy-package:${pkg.key}`, async (ctx) => {
             const userId = ctx.user?.user_id;
             if (!userId) {
-                await ctx.answerOnCallback({ notification: '❌ Ошибка авторизации' }).catch(() => {});
+                await ctx.answerOnCallback({ notification: '❌ Ошибка авторизации' }).catch((err) => console.error(`[AUTH GUARD]`, err));
                 return;
             }
 
@@ -29,7 +29,7 @@ const action = (bot: Bot) => {
                     { format: 'html', attachments: [keyboard] }
                 );
             } catch (error) {
-                console.error('Ошибка создания платежа:', error);
+                console.error(`[BUY-PACKAGE] userId=${userId} package=${pkg.key}:`, error);
                 ctx.reply(
                     '❌ Не удалось создать платёж. Попробуйте позже.',
                     {
