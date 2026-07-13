@@ -1,51 +1,41 @@
 {
-	"name": "poezdhelperbot",
-	"version": "1.0.0",
-	"description": "",
-	"main": "src/app.ts",
-	"scripts": {
-		"build": "tsc",
-		"start": "node dist/app.js",
-		"dev": "tsx watch src/app.ts",
-		"build:storybook": "node ./scripts/storybook.js",
-		"test": "jest",
-		"test:unit": "jest --config jest.unit.config.js",
-		"test:integration": "jest --config jest.integration.config.js",
-		"test:e2e": "jest --config jest.e2e.config.js",
-		"test:ci": "npm run test:unit && npm run test:integration",
-		"test:watch": "jest --watchAll",
-		"test:coverage": "jest --coverage",
-		"lint": "eslint .",
-		"lint:fix": "eslint . --fix",
-		"format:fix": "prettier . --write",
-		"format:check": "prettier . --check",
-		"type:check": "node ./scripts/typecheck.js",
-		"i18n:check": "node ./scripts/i18n-check.js"
-	},
-	"keywords": [],
-	"author": "",
-	"license": "ISC",
-	"type": "commonjs",
-	"devDependencies": {
-		"@eslint/js": "^9.38.0",
-		"@types/eslint-config-prettier": "^6.11.3",
-		"@types/jest": "^30.0.0",
-		"@types/node": "^24.8.1",
-		"eslint": "^9.38.0",
-		"eslint-config-prettier": "^10.1.8",
-		"globals": "^16.4.0",
-		"jest": "^30.2.0",
-		"jiti": "^2.6.1",
-		"prettier": "3.6.2",
-		"ts-jest": "^29.4.5",
-		"tsx": "^4.20.6",
-		"typescript": "^5.9.3",
-		"typescript-eslint": "^8.46.2"
-	},
-	"dependencies": {
-		"@grammyjs/storage-redis": "^2.5.1",
-		"dotenv": "^17.2.3",
-		"grammy": "^1.38.3",
-		"ioredis": "^5.8.1"
-	}
+  "name": "tuda-suda-bot",
+  "version": "1.0.0",
+  "description": "Бот для поиска поездов и электричек в мессенджере Max",
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint",
+    "lint:fix": "eslint --fix",
+    "build": "tsc",
+    "start": "NODE_TLS_REJECT_UNAUTHORIZED=0 node ./dist/app.js",
+    "start:dev": "nodemon src/app.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@eslint/js": "^9.37.0",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^24.7.0",
+    "@types/redis": "^4.0.10",
+    "eslint": "^9.37.0",
+    "globals": "^16.4.0",
+    "jiti": "^2.6.1",
+    "nodemon": "^3.1.10",
+    "ts-node": "^10.9.2",
+    "ts-node-dev": "^2.0.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.0"
+  },
+  "dependencies": {
+    "@maxhub/max-bot-api": "^0.2.4",
+    "axios": "^1.12.2",
+    "better-sqlite3": "^12.11.1",
+    "dotenv": "^17.2.3",
+    "redis": "^5.8.3"
+  },
+  "lint-staged": {
+    "**/*.{js,mjs,cjs,jsx,ts,mts,cts,tsx,vue,astro,svelte}": "oxlint"
+  }
 }

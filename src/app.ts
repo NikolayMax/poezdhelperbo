@@ -1,10 +1,9 @@
-import { config } from 'dotenv';
-import { BotTelegram } from './bot/bot';
-import { UserRedis, TemplateService, ApiService, ErrorService, HttpClientService } from './services';
-import { Redis } from './services';
-import { BotContext } from './types';
-import { Bot } from 'grammy';
-import { ScheduleService, MiddlewareService, TrainService } from './services';
+import { Bot } from "@maxhub/max-bot-api";
+import {config} from "dotenv";
+import {actions} from "./commands";
+import { Buttons } from "./command.button";
+import { CommandsName } from "./consts";
+import { startTracker } from "./tracker";
 
 class App {
 	botTelegram: BotTelegram | undefined;
@@ -29,28 +28,40 @@ class App {
 			return;
 		}
 
-		const bot = new Bot<BotContext>(parsed.TELEGRAM_KEY);
-		const redis = new Redis(parsed.REDIS_URL);
-		const trainService = new TrainService(redis);
-		const userRedis = new UserRedis(redis);
-		const templateService = new TemplateService(userRedis);
-		const errorService = new ErrorService();
-		const httpClientService = new HttpClientService();
-		const api = new ApiService(httpClientService);
-		const scheduleService = new ScheduleService(bot, redis, userRedis, api);
-		const middleware = new MiddlewareService(userRedis);
+    if(!parsed.MAX_BOT_TOKEN) {
+        throw new Error("MAX_BOT_TOKEN not found in .env");
+    }
 
-		this.botTelegram = new BotTelegram(
-			bot,
-			redis,
-			userRedis,
-			templateService,
-			api,
-			errorService,
-			scheduleService,
-			middleware,
-			trainService,
-		);
-	}
+    const bot = new Bot(parsed.MAX_BOT_TOKEN);
+
+    bot.on('bot_started', (ctx) => {
+        bot.api.setMyCommands([
+            { name: 'start',   description: 'Перезапустить бота' },
+            { name: 'help',    description: 'Помощь' },
+            { name: 'balance', description: 'Проверить баланс' },
+        ]);
+        const { text, attachments } = Buttons[CommandsName.Start]();
+        ctx.reply(text, { attachments });
+    });
+
+    bot.on('message_callback', (ctx, next) => {
+        ctx.answerOnCallback({ notification: '' });
+        return next();
+    })
+
+    for(const action of actions){
+        action(bot);
+    }
+
+    startTracker((userId, track) => {
+        bot.api.sendMessageToUser(
+            userId,
+            `🚂 <b>${track.train_number}</b> — ${track.train_name}\n💺 Появились свободные места!\n📅 ${track.date}  🕒 ${track.departure_time} → ${track.arrival_time}\n\nПроверьте в разделе «Мои электрички».`,
+            { format: 'html' }
+        ).catch(() => {});
+    });
+
+    bot.catch((err) => console.error('[BOT ERROR]', err));
+    bot.start();
 }
-new App();
+init()

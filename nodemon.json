@@ -1,0 +1,5 @@
+{
+  "exec": "NODE_TLS_REJECT_UNAUTHORIZED=0 ts-node",
+  "watch": ["src"],
+  "ext": "ts"
+}

@@ -1,0 +1,16 @@
+export interface ITrain{
+    id: number,
+    train_number: string,
+    name: string,
+    rail_type: string,
+    sub_type: string,
+    departure_time: string,
+    arrival_time: string,
+    is_time_stop_fixed: boolean,
+    description: string | null,
+    schedule_changes: string | null,
+    station_from: string,
+    station_to: string,
+    places_count: number | null,
+    is_personification_required: boolean,
+}

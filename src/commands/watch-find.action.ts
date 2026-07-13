@@ -1,0 +1,66 @@
+import { Keyboard, Bot } from "@maxhub/max-bot-api";
+import { CommandsName } from "../consts";
+import axios from "axios";
+import { userRedis } from "../redis";
+import { ITrain } from "../types/traine.interface";
+
+const action = (bot: Bot) => {
+    bot.action(CommandsName.WatchFind, async (ctx) => {
+        const userId = ctx.user!.user_id;
+        const userData = await userRedis.getData(userId);
+        userData.cities = [];
+        const {cityFrom, cityTo, selectedYear, selectedMonth, selectedDay} = userData;
+
+        if(!cityFrom || !cityTo)
+            return ctx.reply('Не выбраны города или город');
+
+        ctx.reply('🔍 Ищу поезда...');
+
+        const day = selectedDay;
+        const dateStr = `${selectedYear}-${String(selectedMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+        try {
+            const {data} = await axios.get<{data: ITrain[]}>(
+                `https://api.svrpk.ru/api/v1/trains/find-by/stations/${cityFrom.id}/${cityTo.id}?date=${dateStr}&count=20`,
+                { headers: { 'X-Requested-With': 'XMLHttpRequest' } }
+            );
+
+            if (data.data.length === 0) {
+                return ctx.reply('😕 Поездов не найдено. Попробуйте другие даты или направления.');
+            }
+
+            userData.lastTrains = data.data.reduce((acc: Record<number, ITrain>, t) => {
+                acc[t.id] = t;
+                return acc;
+            }, {});
+            userData.lastSearchDate = dateStr;
+            userData.lastSearchFromId = cityFrom.id;
+            userData.lastSearchToId = cityTo.id;
+            await userRedis.setData(userId, userData);
+
+            for (const train of data.data) {
+                const [dh, dm] = train.departure_time.split(':').map(Number);
+                const [ah, am] = train.arrival_time.split(':').map(Number);
+                let diff = (ah * 60 + am) - (dh * 60 + dm);
+                if (diff < 0) diff += 24 * 60;
+                const travelTime = `${Math.floor(diff / 60)}ч ${diff % 60}м`;
+
+                const msg =
+                    `🚂 <b>${train.train_number}</b> — ${train.name}\n` +
+                    `🕒 ${train.departure_time} → ${train.arrival_time} (${travelTime})\n` +
+                    `💺 ${train.places_count != null ? `${train.places_count} мест` : '❌ Мест нет'}`;
+
+                const keyboard = Keyboard.inlineKeyboard([
+                    [Keyboard.button.callback("Отследить место", `watch-place:${train.id}`)],
+                ]);
+
+                ctx.reply(msg, { format: 'html', attachments: [keyboard] });
+            }
+        } catch (error) {
+            console.error('Ошибка при поиске поездов:', error);
+            return ctx.reply('❌ Не удалось получить данные. Попробуйте позже.');
+        }
+    })
+}
+
+export default action;
