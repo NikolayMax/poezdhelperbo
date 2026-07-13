@@ -17,23 +17,37 @@ function setDateAndShowWatch(ctx: any, userId: number, year: number, month: numb
 
 const actionDay = (bot: Bot) => {
     bot.action('today', async (ctx) => {
-        const userId = ctx.user!.user_id;
+        const userId = ctx.user?.user_id;
+        if (!userId) {
+            await ctx.answerOnCallback({ notification: '❌ Ошибка авторизации' }).catch(() => {});
+            return;
+        }
         const now = new Date();
         await setDateAndShowWatch(ctx, userId, now.getFullYear(), now.getMonth(), now.getDate())();
     });
 
     bot.action('tomorrow', async (ctx) => {
-        const userId = ctx.user!.user_id;
+        const userId = ctx.user?.user_id;
+        if (!userId) {
+            await ctx.answerOnCallback({ notification: '❌ Ошибка авторизации' }).catch(() => {});
+            return;
+        }
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
         await setDateAndShowWatch(ctx, userId, tomorrow.getFullYear(), tomorrow.getMonth(), tomorrow.getDate())();
     });
 
     bot.action(new RegExp(CommandsName.Day), async (ctx) => {
-        const userId = ctx.user!.user_id;
+        const userId = ctx.user?.user_id;
+        if (!userId) {
+            await ctx.answerOnCallback({ notification: '❌ Ошибка авторизации' }).catch(() => {});
+            return;
+        }
         const userData = await userRedis.getData(userId);
 
-        userData.selectedDay = Number(ctx.match![1]);
+        const day = Number(ctx.match?.[1]);
+        if (isNaN(day)) return;
+        userData.selectedDay = day;
         await userRedis.setData(userId, userData);
 
         const {text, attachments} = await Buttons[CommandsName.Watch](ctx);

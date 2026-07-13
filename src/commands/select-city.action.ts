@@ -5,8 +5,13 @@ import { userRedis } from "../redis";
 
 export const actionSelectCity = (bot: Bot) => {
     bot.action(new RegExp(CommandsName.SelectCity), async (ctx) => {
-        const slug = ctx.match![1];
-        const userId = ctx.user!.user_id;
+        const userId = ctx.user?.user_id;
+        if (!userId) {
+            await ctx.answerOnCallback({ notification: '❌ Ошибка авторизации' }).catch(() => {});
+            return;
+        }
+        const slug = ctx.match?.[1];
+        if (!slug) return;
         const userData = await userRedis.getData(userId);
         const currentCity = userData?.cities?.find((city) => city.slug === slug)
 

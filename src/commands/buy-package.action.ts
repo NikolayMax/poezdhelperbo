@@ -5,7 +5,11 @@ import { createPayment } from "../payments/tinkoff";
 const action = (bot: Bot) => {
     for (const pkg of PACKAGES) {
         bot.action(`buy-package:${pkg.key}`, async (ctx) => {
-            const userId = ctx.user!.user_id;
+            const userId = ctx.user?.user_id;
+            if (!userId) {
+                await ctx.answerOnCallback({ notification: '❌ Ошибка авторизации' }).catch(() => {});
+                return;
+            }
 
             try {
                 const { paymentUrl, paymentId } = await createPayment(userId, pkg.key);

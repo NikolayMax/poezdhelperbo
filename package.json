@@ -7,9 +7,9 @@
     "lint": "eslint",
     "lint:fix": "eslint --fix",
     "build": "tsc",
-    "start": "cross-env NODE_TLS_REJECT_UNAUTHORIZED=0 node ./dist/app.js",
+    "start": "node ./dist/app.js",
     "start:dev": "cross-env NODE_TLS_REJECT_UNAUTHORIZED=0 nodemon src/app.ts",
-    "db:view": "cross-env NODE_TLS_REJECT_UNAUTHORIZED=0 ts-node ./sqlite-viewer.ts"
+    "db:view": "ts-node ./sqlite-viewer.ts"
   },
   "keywords": [],
   "author": "",

@@ -10,7 +10,8 @@ type ButtonResult = { text: string; attachments?: AttachmentRequest[] };
 
 export const Buttons = {
     [CommandsName.Start]: async (ctx?: Context): Promise<ButtonResult> => {
-        const userId = ctx!.user!.user_id;
+        const userId = ctx?.user?.user_id;
+        if (!userId) return { text: '❌ Ошибка: пользователь не найден' };
         const total = getTotalAvailable(userId);
         const tracks = getUserTracks(userId);
         return {
@@ -28,7 +29,8 @@ export const Buttons = {
         };
     },
     [CommandsName.Balance]: async (ctx?: Context): Promise<ButtonResult> => {
-        const userId = ctx!.user!.user_id;
+        const userId = ctx?.user?.user_id;
+        if (!userId) return { text: '❌ Ошибка: пользователь не найден' };
         checkAndExpirePaid(userId);
         const balance = getBalance(userId);
         const total = getTotalAvailable(userId);
@@ -70,7 +72,8 @@ export const Buttons = {
         }
     },
     [CommandsName.Watch]: async (ctx?: Context): Promise<ButtonResult> => {
-        const userId = ctx!.user!.user_id;
+        const userId = ctx?.user?.user_id;
+        if (!userId) return { text: '❌ Ошибка: пользователь не найден' };
         const userData = await userRedis.getData(userId);
 
         return {
@@ -85,7 +88,8 @@ export const Buttons = {
         }
     },
     [CommandsName.Month]: async (ctx?: Context): Promise<ButtonResult> => {
-        const userId = ctx!.user!.user_id;
+        const userId = ctx?.user?.user_id;
+        if (!userId) return { text: '❌ Ошибка: пользователь не найден' };
         const {selectedYear, selectedMonth} = await userRedis.getData(userId);
         const endDay = getLastDayOfMonth(selectedYear, selectedMonth);
 

@@ -3,10 +3,15 @@ import { CommandsName } from "../consts";
 import axios from "axios";
 import { userRedis } from "../redis";
 import { ITrain } from "../types/traine.interface";
+import { isTrainTracked } from "../tracker";
 
 const action = (bot: Bot) => {
     bot.action(CommandsName.WatchFind, async (ctx) => {
-        const userId = ctx.user!.user_id;
+        const userId = ctx.user?.user_id;
+        if (!userId) {
+            await ctx.answerOnCallback({ notification: '❌ Ошибка авторизации' }).catch(() => {});
+            return;
+        }
         const userData = await userRedis.getData(userId);
         userData.cities = [];
         const {cityFrom, cityTo, selectedYear, selectedMonth, selectedDay} = userData;
@@ -52,9 +57,12 @@ const action = (bot: Bot) => {
                     `🕒 ${train.departure_time} → ${train.arrival_time} (${travelTime})\n` +
                     `💺 ${train.places_count != null ? `${train.places_count} мест` : '❌ Мест нет'}`;
 
-                const keyboard = Keyboard.inlineKeyboard([
-                    [Keyboard.button.callback("Отследить место", `watch-place:${train.id}`)],
-                ]);
+                const alreadyTracked = isTrainTracked(userId, train.id, dateStr, cityFrom.id, cityTo.id);
+                const keyboard = Keyboard.inlineKeyboard(
+                    alreadyTracked
+                        ? [[Keyboard.button.callback("✅ Уже отслеживается", "noop")]]
+                        : [[Keyboard.button.callback("Отследить место", `watch-place:${train.id}`)]]
+                );
 
                 ctx.reply(msg, { format: 'html', attachments: [keyboard] });
             }

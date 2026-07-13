@@ -15,7 +15,7 @@ export interface IReferralStats {
 
 export function isUserRegistered(userId: number): boolean {
   const db = getDb();
-  const row = db.prepare('SELECT 1 FROM users WHERE user_id = ?').get(userId);
+  const row = db.prepare('SELECT 1 FROM users WHERE user_id = ? AND phone IS NOT NULL AND name IS NOT NULL').get(userId);
   return !!row;
 }
 

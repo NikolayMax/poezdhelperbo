@@ -25,12 +25,6 @@ const SELECT_BALANCE = `
   WHERE user_id = ?
 `;
 
-const UPDATE_FREE = `
-  UPDATE user_balance
-  SET free_requests = ?, updated_at = datetime('now')
-  WHERE user_id = ?
-`;
-
 const UPDATE_PAID = `
   UPDATE user_balance
   SET paid_requests_remaining = ?, paid_requests_expiry = ?, updated_at = datetime('now')
@@ -52,9 +46,8 @@ function rowToBalance(row: { user_id: number; free_requests: number; paid_reques
   };
 }
 
-export function ensureUser(userId: number): void {
+function ensureUser(userId: number): void {
   const db = getDb();
-  db.prepare(`INSERT OR IGNORE INTO users (user_id) VALUES (?)`).run(userId);
   db.prepare(INSERT_IF_NOT_EXISTS).run(userId);
 }
 
@@ -89,17 +82,23 @@ export function deductRequest(userId: number): IDeductResult {
   const db = getDb();
   ensureUser(userId);
 
-  checkAndExpirePaid(userId);
+  const freeResult = db.prepare(`
+    UPDATE user_balance SET free_requests = free_requests - 1, updated_at = datetime('now')
+    WHERE user_id = ? AND free_requests > 0
+  `).run(userId);
 
-  const balance = getBalance(userId);
-
-  if (balance.freeRequests > 0) {
-    db.prepare(UPDATE_FREE).run(balance.freeRequests - 1, userId);
+  if (freeResult.changes > 0) {
     return { success: true, source: 'free' };
   }
 
-  if (balance.paidRequestsRemaining > 0 && balance.paidRequestsExpiry && Date.now() < balance.paidRequestsExpiry) {
-    db.prepare(UPDATE_PAID).run(balance.paidRequestsRemaining - 1, balance.paidRequestsExpiry, userId);
+  checkAndExpirePaid(userId);
+
+  const paidResult = db.prepare(`
+    UPDATE user_balance SET paid_requests_remaining = paid_requests_remaining - 1, updated_at = datetime('now')
+    WHERE user_id = ? AND paid_requests_remaining > 0 AND paid_requests_expiry IS NOT NULL AND paid_requests_expiry > ?
+  `).run(userId, Date.now());
+
+  if (paidResult.changes > 0) {
     return { success: true, source: 'paid' };
   }
 

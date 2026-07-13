@@ -4,7 +4,11 @@ import { checkPayment } from "../payments/tinkoff";
 
 const action = (bot: Bot) => {
     bot.action(new RegExp(CommandsName.CheckPayment), async (ctx) => {
-        const userId = ctx.user!.user_id;
+        const userId = ctx.user?.user_id;
+        if (!userId) {
+            await ctx.answerOnCallback({ notification: '❌ Ошибка авторизации' }).catch(() => {});
+            return;
+        }
         const paymentId = Number(ctx.match?.[1]);
         if (!paymentId) return;
 

@@ -4,7 +4,11 @@ import { removeTrack, getTrackById } from "../tracker";
 
 const action = (bot: Bot) => {
     bot.action(new RegExp(CommandsName.RemoveTrack), async (ctx) => {
-        const userId = ctx.user!.user_id;
+        const userId = ctx.user?.user_id;
+        if (!userId) {
+            await ctx.answerOnCallback({ notification: '❌ Ошибка авторизации' }).catch(() => {});
+            return;
+        }
         const trackId = Number(ctx.match?.[1]);
         if (!trackId) return;
 

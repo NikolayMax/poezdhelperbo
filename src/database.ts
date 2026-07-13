@@ -38,8 +38,7 @@ function initSchema() {
       paid_requests_remaining INTEGER NOT NULL DEFAULT 0,
       paid_requests_expiry   INTEGER,
       created_at             TEXT NOT NULL DEFAULT (datetime('now')),
-      updated_at             TEXT NOT NULL DEFAULT (datetime('now')),
-      FOREIGN KEY (user_id) REFERENCES users(user_id)
+      updated_at             TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
     CREATE TABLE IF NOT EXISTS tracked_trains (

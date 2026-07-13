@@ -5,9 +5,15 @@ import { userRedis } from "../redis";
 
 const actionMonth = (bot: Bot) => {
     bot.action(new RegExp(CommandsName.Month), async (ctx) => {
-        const userId = ctx.user!.user_id;
+        const userId = ctx.user?.user_id;
+        if (!userId) {
+            await ctx.answerOnCallback({ notification: '❌ Ошибка авторизации' }).catch(() => {});
+            return;
+        }
         const userData = await userRedis.getData(userId);
-        userData.selectedMonth = Number(ctx.match![1]);
+        const month = Number(ctx.match?.[1]);
+        if (isNaN(month)) return;
+        userData.selectedMonth = month;
         await userRedis.setData(userId, userData);
 
         const {text, attachments} = await Buttons[CommandsName.Month](ctx)

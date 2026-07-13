@@ -1,7 +1,7 @@
 import crypto from 'crypto';
 import axios from 'axios';
 import { getDb } from '../database';
-import { ensureUser, addPaidRequests } from '../balance';
+import { addPaidRequests } from '../balance';
 import { PACKAGES } from '../consts';
 
 const API_URL = 'https://securepay.tinkoff.ru';
@@ -88,7 +88,6 @@ export async function createPayment(userId: number, packageKey: string): Promise
     );
   }
 
-  ensureUser(userId);
   const db = getDb();
   const result = db.prepare(`
     INSERT INTO payments (user_id, package_key, amount, tinkoff_payment_id, tinkoff_order_id)

@@ -6,7 +6,11 @@ import { addTrack } from "../tracker";
 
 const action = (bot: Bot) => {
     bot.action(new RegExp(CommandsName.WatchPlace), async (ctx) => {
-        const userId = ctx.user!.user_id;
+        const userId = ctx.user?.user_id;
+        if (!userId) {
+            await ctx.answerOnCallback({ notification: '❌ Ошибка авторизации' }).catch(() => {});
+            return;
+        }
         const trainId = Number(ctx.match?.[1]);
         if (!trainId) return;
 
@@ -44,6 +48,7 @@ const action = (bot: Bot) => {
 
         const keyboard = Keyboard.inlineKeyboard([
             [Keyboard.button.callback("🚂 Мои электрички", CommandsName.MyTrains)],
+            [Keyboard.button.callback("Главное меню", CommandsName.Start)],
         ]);
 
         return ctx.reply(

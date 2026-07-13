@@ -43,6 +43,11 @@ const SELECT_ACTIVE = `
   WHERE datetime(date || ' ' || departure_time) > datetime('now', '-3 hours')
 `;
 
+const CHECK_TRACKED = `
+  SELECT 1 FROM tracked_trains
+  WHERE user_id = ? AND train_id = ? AND date = ? AND station_from_id = ? AND station_to_id = ?
+`;
+
 const UPDATE_PLACES = `
   UPDATE tracked_trains
   SET last_places_count = ?, notified = ?
@@ -88,6 +93,12 @@ export function removeTrack(id: number, userId: number): boolean {
 export function getActiveTracks(): ITrackedTrain[] {
   const db = getDb();
   return db.prepare(SELECT_ACTIVE).all() as ITrackedTrain[];
+}
+
+export function isTrainTracked(userId: number, trainId: number, date: string, fromId: number, toId: number): boolean {
+  const db = getDb();
+  const row = db.prepare(CHECK_TRACKED).get(userId, trainId, date, fromId, toId);
+  return !!row;
 }
 
 export function updatePlaces(id: number, placesCount: number | null, notified: number): void {

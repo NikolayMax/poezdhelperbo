@@ -6,7 +6,11 @@ import { userRedis } from "../redis";
 const action = (bot: Bot) => {
     bot.action(CommandsName.CityTo, async (ctx) => {
         const {text} = await Buttons[CommandsName.CityTo]();
-        const userId = ctx.user!.user_id;
+        const userId = ctx.user?.user_id;
+        if (!userId) {
+            await ctx.answerOnCallback({ notification: '❌ Ошибка авторизации' }).catch(() => {});
+            return;
+        }
         const userData = await userRedis.getData(userId);
         userData.currentSelectCity = CurrentSelectCity.To;
         await userRedis.setData(userId, userData);
