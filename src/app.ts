@@ -43,13 +43,21 @@ function init() {
         }
 
         if (!isUserRegistered(userId)) {
+            const legalUrl = process.env.LEGAL_BASE_URL || '';
+            const offerUrl = `${legalUrl}/offer.html`;
+            const privacyUrl = `${legalUrl}/privacy.html`;
+
             const keyboard = Keyboard.inlineKeyboard([
                 [Keyboard.button.requestContact("📱 Поделиться контактом")],
             ]);
+
             ctx.reply(
                 '👋 Добро пожаловать!\n\n' +
                 'Я помогу найти и отследить Ласточки 🐦\n\n' +
-                'Для начала работы поделитесь контактом, чтобы зарегистрироваться.\n\n' +
+                '📋 Для регистрации ознакомьтесь с документами:\n' +
+                `📄 Публичная оферта — ${offerUrl}\n` +
+                `📄 Политика обработки ПД — ${privacyUrl}\n\n` +
+                'Нажимая кнопку "Поделиться контактом", вы подтверждаете ознакомление с условиями Оферты и даёте согласие на обработку персональных данных.\n\n' +
                 (process.env.CHANNEL_ID ? '📢 После регистрации необходимо подписаться на канал для использования бота.\n\n' : '') +
                 'Если вас пригласил друг — он мог отправить вам ссылку. Регистрируйтесь и бонус зачислится автоматически.',
                 { attachments: [keyboard] }

@@ -2,7 +2,7 @@ import { Keyboard, Bot } from "@maxhub/max-bot-api";
 import { CommandsName, CurrentSelectCity } from "../consts";
 import { Buttons } from "../command.button";
 import type { AppDependencies } from "../container";
-import { isUserRegistered, registerUser } from "../referral";
+import { isUserRegistered, registerUser, setAgreement } from "../referral";
 
 function parseVcf(vcf: string): { phone: string; name: string | null } {
     let phone = '';
@@ -37,6 +37,7 @@ const action = (bot: Bot, deps: AppDependencies) => {
 
             const { phone, name } = parseVcf(payload.vcf_info);
             console.log(`[CONTACT] userId=${userId} phone=${phone} name=${name}`);
+            setAgreement(userId);
             registerUser(userId, phone, name);
 
             if (process.env.CHANNEL_ID) {

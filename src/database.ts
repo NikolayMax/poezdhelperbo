@@ -25,11 +25,13 @@ function initSchema() {
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
-      user_id       INTEGER PRIMARY KEY,
-      phone         TEXT,
-      name          TEXT,
-      subscribed    INTEGER NOT NULL DEFAULT 0,
-      registered_at TEXT NOT NULL DEFAULT (datetime('now'))
+      user_id               INTEGER PRIMARY KEY,
+      phone                 TEXT,
+      name                  TEXT,
+      subscribed            INTEGER NOT NULL DEFAULT 0,
+      agreement_accepted    INTEGER NOT NULL DEFAULT 0,
+      agreement_accepted_at TEXT,
+      registered_at         TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
     CREATE TABLE IF NOT EXISTS user_balance (
@@ -82,6 +84,7 @@ function initSchema() {
   `);
 
   migrateExistingUsers();
+  migrateAgreementColumns();
 }
 
 function migrateExistingUsers() {
@@ -97,5 +100,20 @@ function migrateExistingUsers() {
   }
   if (rows.length > 0) {
     console.log(`[MIGRATE] Created ${rows.length} user records for existing users`);
+  }
+}
+
+function migrateAgreementColumns() {
+  const columns = db.prepare("PRAGMA table_info(users)").all() as { name: string }[];
+  const columnNames = columns.map(c => c.name);
+
+  if (!columnNames.includes('agreement_accepted')) {
+    db.exec("ALTER TABLE users ADD COLUMN agreement_accepted INTEGER NOT NULL DEFAULT 0");
+    console.log('[MIGRATE] Added agreement_accepted column');
+  }
+
+  if (!columnNames.includes('agreement_accepted_at')) {
+    db.exec("ALTER TABLE users ADD COLUMN agreement_accepted_at TEXT");
+    console.log('[MIGRATE] Added agreement_accepted_at column');
   }
 }

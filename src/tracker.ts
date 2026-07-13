@@ -130,8 +130,8 @@ export function startTracker(
         const alive: ITrackedTrain[] = [];
 
         for (const track of group) {
-          const departureTime = new Date(`${track.date.replace(/-/g, '/')}T${track.departure_time}`);
-          if (Date.now() - departureTime.getTime() > EXPIRY_THRESHOLD) {
+          const createdAt = new Date(track.created_at);
+          if (Date.now() - createdAt.getTime() > EXPIRY_THRESHOLD) {
             console.log('[TRACKER] Expired track', track.train_number, 'for user', track.user_id);
             expiryFn(track.user_id, track);
             removeTrack(track.id, track.user_id);

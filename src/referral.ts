@@ -6,6 +6,8 @@ export interface IUserRecord {
   phone: string | null;
   name: string | null;
   subscribed: number;
+  agreement_accepted: number;
+  agreement_accepted_at: string | null;
   registered_at: string;
 }
 
@@ -17,6 +19,21 @@ export function isUserRegistered(userId: number): boolean {
   const db = getDb();
   const row = db.prepare('SELECT 1 FROM users WHERE user_id = ? AND phone IS NOT NULL AND name IS NOT NULL').get(userId);
   return !!row;
+}
+
+export function hasAgreement(userId: number): boolean {
+  const db = getDb();
+  const row = db.prepare('SELECT agreement_accepted FROM users WHERE user_id = ?').get(userId) as { agreement_accepted: number } | undefined;
+  return row ? row.agreement_accepted === 1 : false;
+}
+
+export function setAgreement(userId: number): void {
+  const db = getDb();
+  db.prepare(`
+    UPDATE users SET agreement_accepted = 1, agreement_accepted_at = datetime('now')
+    WHERE user_id = ?
+  `).run(userId);
+  console.log(`[AGREEMENT] userId=${userId} agreement_accepted=1`);
 }
 
 export function registerUser(userId: number, phone: string, name: string | null): void {
