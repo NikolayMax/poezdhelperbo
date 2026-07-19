@@ -15,8 +15,8 @@ export interface IDeductResult {
 const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
 const INSERT_IF_NOT_EXISTS = `
-  INSERT OR IGNORE INTO user_balance (user_id, free_requests)
-  VALUES (?, 3)
+  INSERT OR IGNORE INTO user_balance (user_id, free_requests, created_at, updated_at)
+  VALUES (?, 10, datetime('now', 'localtime'), datetime('now', 'localtime'))
 `;
 
 const SELECT_BALANCE = `
@@ -27,13 +27,13 @@ const SELECT_BALANCE = `
 
 const UPDATE_PAID = `
   UPDATE user_balance
-  SET paid_requests_remaining = ?, paid_requests_expiry = ?, updated_at = datetime('now')
+  SET paid_requests_remaining = ?, paid_requests_expiry = ?, updated_at = datetime('now', 'localtime')
   WHERE user_id = ?
 `;
 
 const RESET_PAID = `
   UPDATE user_balance
-  SET paid_requests_remaining = 0, paid_requests_expiry = NULL, updated_at = datetime('now')
+  SET paid_requests_remaining = 0, paid_requests_expiry = NULL, updated_at = datetime('now', 'localtime')
   WHERE user_id = ?
 `;
 
@@ -59,7 +59,7 @@ export function getBalance(userId: number): IUserBalance {
   } | undefined;
 
   if (!row) {
-    return { userId, freeRequests: 3, paidRequestsRemaining: 0, paidRequestsExpiry: null };
+    return { userId, freeRequests: 10, paidRequestsRemaining: 0, paidRequestsExpiry: null };
   }
 
   return rowToBalance(row);
@@ -83,7 +83,7 @@ export function deductRequest(userId: number): IDeductResult {
   ensureUser(userId);
 
   const freeResult = db.prepare(`
-    UPDATE user_balance SET free_requests = free_requests - 1, updated_at = datetime('now')
+    UPDATE user_balance SET free_requests = free_requests - 1, updated_at = datetime('now', 'localtime')
     WHERE user_id = ? AND free_requests > 0
   `).run(userId);
 
@@ -95,7 +95,7 @@ export function deductRequest(userId: number): IDeductResult {
   checkAndExpirePaid(userId);
 
   const paidResult = db.prepare(`
-    UPDATE user_balance SET paid_requests_remaining = paid_requests_remaining - 1, updated_at = datetime('now')
+    UPDATE user_balance SET paid_requests_remaining = paid_requests_remaining - 1, updated_at = datetime('now', 'localtime')
     WHERE user_id = ? AND paid_requests_remaining > 0 AND paid_requests_expiry IS NOT NULL AND paid_requests_expiry > ?
   `).run(userId, Date.now());
 
@@ -118,6 +118,16 @@ export function addPaidRequests(userId: number, count: number): void {
 
   db.prepare(UPDATE_PAID).run(newRemaining, newExpiry, userId);
   console.log(`[BALANCE] addPaidRequests userId=${userId} count=${count} newRemaining=${newRemaining}`);
+}
+
+export function refundRequest(userId: number, source: 'free' | 'paid'): void {
+  const db = getDb();
+  if (source === 'free') {
+    db.prepare(`UPDATE user_balance SET free_requests = free_requests + 1, updated_at = datetime('now', 'localtime') WHERE user_id = ?`).run(userId);
+  } else {
+    db.prepare(`UPDATE user_balance SET paid_requests_remaining = paid_requests_remaining + 1, updated_at = datetime('now', 'localtime') WHERE user_id = ?`).run(userId);
+  }
+  console.log(`[BALANCE] refundRequest userId=${userId} source=${source}`);
 }
 
 export function getTotalAvailable(userId: number): number {

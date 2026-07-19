@@ -30,7 +30,7 @@ export function hasAgreement(userId: number): boolean {
 export function setAgreement(userId: number): void {
   const db = getDb();
   db.prepare(`
-    UPDATE users SET agreement_accepted = 1, agreement_accepted_at = datetime('now')
+    UPDATE users SET agreement_accepted = 1, agreement_accepted_at = datetime('now', 'localtime')
     WHERE user_id = ?
   `).run(userId);
   console.log(`[AGREEMENT] userId=${userId} agreement_accepted=1`);
@@ -39,13 +39,13 @@ export function setAgreement(userId: number): void {
 export function registerUser(userId: number, phone: string, name: string | null): void {
   const db = getDb();
   db.prepare(`
-    INSERT OR IGNORE INTO users (user_id, phone, name)
-    VALUES (?, ?, ?)
+    INSERT OR IGNORE INTO users (user_id, phone, name, registered_at)
+    VALUES (?, ?, ?, datetime('now', 'localtime'))
   `).run(userId, phone, name);
 
   db.prepare(`
-    INSERT OR IGNORE INTO user_balance (user_id, free_requests)
-    VALUES (?, 3)
+    INSERT OR IGNORE INTO user_balance (user_id, free_requests, created_at, updated_at)
+    VALUES (?, 10, datetime('now', 'localtime'), datetime('now', 'localtime'))
   `).run(userId);
 
   console.log(`[REGISTER] userId=${userId} phone=${phone} name=${name}`);
@@ -92,30 +92,46 @@ export function applyReferralBonus(referrerId: number, referredId: number): bool
   const db = getDb();
 
   const existing = db.prepare('SELECT 1 FROM referrals WHERE referred_id = ?').get(referredId);
-  if (existing) return false;
+  if (existing) {
+    console.log(`[REFERRAL] skip: referredId=${referredId} already has a referrer`);
+    return false;
+  }
 
-  if (referrerId === referredId) return false;
+  if (referrerId === referredId) {
+    console.log(`[REFERRAL] skip: userId=${referrerId} self-referral`);
+    return false;
+  }
 
   const referrerExists = db.prepare('SELECT 1 FROM users WHERE user_id = ?').get(referrerId);
-  if (!referrerExists) return false;
+  if (!referrerExists) {
+    console.log(`[REFERRAL] skip: referrerId=${referrerId} not found in users`);
+    return false;
+  }
 
   const referredExists = db.prepare('SELECT 1 FROM users WHERE user_id = ?').get(referredId);
-  if (!referredExists) return false;
+  if (!referredExists) {
+    console.log(`[REFERRAL] skip: referredId=${referredId} not found in users`);
+    return false;
+  }
 
-  db.prepare(`
-    INSERT INTO referrals (referrer_id, referred_id, bonus_granted)
-    VALUES (?, ?, 1)
-  `).run(referrerId, referredId);
+  const grantBonus = db.transaction(() => {
+    db.prepare(`
+      INSERT INTO referrals (referrer_id, referred_id, bonus_granted, created_at)
+      VALUES (?, ?, 1, datetime('now', 'localtime'))
+    `).run(referrerId, referredId);
 
-  db.prepare(`
-    UPDATE user_balance SET free_requests = free_requests + 3, updated_at = datetime('now')
-    WHERE user_id = ?
-  `).run(referrerId);
+    db.prepare(`
+      UPDATE user_balance SET free_requests = free_requests + 3, updated_at = datetime('now', 'localtime')
+      WHERE user_id = ?
+    `).run(referrerId);
 
-  db.prepare(`
-    UPDATE user_balance SET free_requests = free_requests + 3, updated_at = datetime('now')
-    WHERE user_id = ?
-  `).run(referredId);
+    db.prepare(`
+      UPDATE user_balance SET free_requests = free_requests + 3, updated_at = datetime('now', 'localtime')
+      WHERE user_id = ?
+    `).run(referredId);
+  });
+
+  grantBonus();
 
   console.log(`[REFERRAL] bonus granted referrerId=${referrerId} referredId=${referredId}`);
   return true;

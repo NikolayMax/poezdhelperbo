@@ -46,27 +46,32 @@ const action = (bot: Bot, deps: AppDependencies) => {
             return;
         }
 
-        const subscribed = await isSubscribedToChannel(userId, channelId, bot);
-        console.log(`[CHECK-SUBSCRIPTION] userId=${userId} subscribed=${subscribed}`);
-        updateSubscriptionStatus(userId, subscribed ? 1 : 0);
+        try {
+            const subscribed = await isSubscribedToChannel(userId, channelId, bot);
+            console.log(`[CHECK-SUBSCRIPTION] userId=${userId} subscribed=${subscribed}`);
+            updateSubscriptionStatus(userId, subscribed ? 1 : 0);
 
-        if (subscribed) {
-            let resultText = `✅ Спасибо за подписку!\n\n`;
+            if (subscribed) {
+                let resultText = `✅ Спасибо за подписку!\n\n`;
 
-            const userData = await deps.redis.getData(userId);
-            const referrerId = userData.pendingReferral;
-            if (referrerId && referrerId !== userId && applyReferralBonus(referrerId, userId)) {
-                console.log(`[CHECK-SUBSCRIPTION] userId=${userId} referralBonus=applied referrerId=${referrerId}`);
-                resultText += `🎉 Вы и ваш друг получили +3 запроса за реферала!\n\n`;
-                userData.pendingReferral = undefined;
-                await deps.redis.setData(userId, userData);
+                const userData = await deps.redis.getData(userId);
+                const referrerId = userData.pendingReferral;
+                if (referrerId && referrerId !== userId && applyReferralBonus(referrerId, userId)) {
+                    console.log(`[CHECK-SUBSCRIPTION] userId=${userId} referralBonus=applied referrerId=${referrerId}`);
+                    resultText += `🎉 Вы и ваш друг получили +3 запроса за реферала!\n\n`;
+                    userData.pendingReferral = undefined;
+                    await deps.redis.setData(userId, userData);
+                }
+
+                const { text, attachments } = await Buttons[CommandsName.Start](ctx);
+                ctx.reply(resultText + text, { attachments });
+            } else {
+                const { text, attachments } = Buttons.SubscriptionPrompt();
+                ctx.reply(text, { attachments });
             }
-
-            const { text, attachments } = await Buttons[CommandsName.Start](ctx);
-            ctx.reply(resultText + text, { attachments });
-        } else {
-            const { text, attachments } = Buttons.SubscriptionPrompt();
-            ctx.reply(text, { attachments });
+        } catch (err: any) {
+            console.error(`[CHECK-SUBSCRIPTION] userId=${userId} error:`, err?.message ?? err);
+            ctx.reply('❌ Ошибка проверки подписки. Попробуйте позже.');
         }
     });
 }

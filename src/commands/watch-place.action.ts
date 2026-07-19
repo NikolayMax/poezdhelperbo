@@ -1,6 +1,6 @@
 import { Keyboard, Bot } from "@maxhub/max-bot-api";
 import { CommandsName } from "../consts";
-import { deductRequest } from "../balance";
+import { deductRequest, refundRequest } from "../balance";
 import { userRedis } from "../redis";
 import { addTrack } from "../tracker";
 
@@ -35,18 +35,24 @@ const action = (bot: Bot) => {
         }
 
         console.log(`[WATCH-PLACE] userId=${userId} trainId=${trainId} train=${train.train_number} deduction=${deduction.source}`);
-        addTrack(
-            userId,
-            trainId,
-            train.train_number,
-            train.name,
-            userData.lastSearchDate!,
-            train.departure_time,
-            train.arrival_time,
-            userData.lastSearchFromId!,
-            userData.lastSearchToId!,
-            train.places_count,
-        );
+        try {
+            addTrack(
+                userId,
+                trainId,
+                train.train_number,
+                train.name,
+                userData.lastSearchDate!,
+                train.departure_time,
+                train.arrival_time,
+                userData.lastSearchFromId!,
+                userData.lastSearchToId!,
+                train.places_count,
+            );
+        } catch (err: any) {
+            console.error(`[WATCH-PLACE] userId=${userId} trainId=${trainId} addTrack FAILED:`, err?.message ?? err);
+            refundRequest(userId, deduction.source!);
+            return ctx.reply('❌ Ошибка при добавлении поезда в отслеживание. Запрос возвращён. Попробуйте позже.');
+        }
 
         const keyboard = Keyboard.inlineKeyboard([
             [Keyboard.button.callback("🚂 Мои электрички", CommandsName.MyTrains)],

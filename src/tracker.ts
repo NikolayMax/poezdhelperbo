@@ -18,8 +18,8 @@ export interface ITrackedTrain {
 }
 
 const INSERT_TRACK = `
-  INSERT INTO tracked_trains (user_id, train_id, train_number, train_name, date, departure_time, arrival_time, station_from_id, station_to_id, last_places_count)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  INSERT INTO tracked_trains (user_id, train_id, train_number, train_name, date, departure_time, arrival_time, station_from_id, station_to_id, last_places_count, created_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))
 `;
 
 const SELECT_BY_USER = `
@@ -40,7 +40,7 @@ const DELETE_TRACK = `
 
 const SELECT_ACTIVE = `
   SELECT * FROM tracked_trains
-  WHERE datetime(date || ' ' || departure_time) >= datetime('now', '-1 hours')
+  WHERE datetime(date || ' ' || departure_time) >= datetime('now', 'localtime', '-1 hours')
 `;
 
 const CHECK_TRACKED = `
@@ -118,6 +118,10 @@ export function startTracker(
     try {
       const tracks = getActiveTracks();
 
+      if (tracks.length > 0) {
+        console.log(`[TRACKER] === Cycle: ${tracks.length} active track(s) ===`);
+      }
+
       const groups = new Map<string, ITrackedTrain[]>();
       for (const track of tracks) {
         const key = `${track.station_from_id}:${track.station_to_id}:${track.date}`;
@@ -157,10 +161,14 @@ export function startTracker(
 
             const places = trainInfo.places_count;
             for (const track of matching) {
-              console.log('[TRACKER] Train', track.train_number, 'places:', places);
+              const prev = track.last_places_count;
+              console.log(
+                `[TRACKER] Train ${track.train_number} ${track.station_from_id}→${track.station_to_id} ${track.date} ${track.departure_time}` +
+                ` | userId=${track.user_id} | places: ${places} (was: ${prev})`
+              );
 
               if (!track.notified && places != null && places > 0) {
-                console.log('[TRACKER] Notification sent for', track.train_number, 'to user', track.user_id);
+                console.log(`[TRACKER] 🔥 NOTIFY: Train ${track.train_number} ${track.station_from_id}→${track.station_to_id} ${track.date} | userId=${track.user_id} | places=${places}`);
                 notifyFn(track.user_id, track);
                 removeTrack(track.id, track.user_id);
               } else {

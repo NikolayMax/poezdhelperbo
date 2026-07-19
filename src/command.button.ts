@@ -19,11 +19,13 @@ export const Buttons = {
                   `📊 Твой профиль\n` +
                   `   💳 Баланс запросов: ${total}\n` +
                   `   🚂 Треков:   ${tracks.length}\n\n` +
+                  `👥 Пригласи друга — получи +3 запроса\n\n` +
                   `Выбери действие 👇`,
             attachments: [Keyboard.inlineKeyboard([
                 [Keyboard.button.callback("🔍 Начать поиск", CommandsName.Watch)],
                 [Keyboard.button.callback("🚂 Мои электрички", CommandsName.MyTrains)],
                 [Keyboard.button.callback("💳 Купить запросы", CommandsName.Buy)],
+                [Keyboard.button.callback("🤝 Пригласить друга", "referral-info")],
                 [Keyboard.button.callback("❓ Помощь", CommandsName.Help)],
             ])]
         };

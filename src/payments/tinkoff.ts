@@ -63,6 +63,8 @@ export async function createPayment(userId: number, packageKey: string): Promise
   const amountInKopecks = pkg.price * 100;
   const tinkoffOrderId = `pzd_${userId}_${packageKey}_${Date.now()}`;
 
+  console.log(`[PAYMENT] Creating payment userId=${userId} package=${packageKey} amount=${pkg.price}₽ orderId=${tinkoffOrderId}`);
+
   const description = `Пакет "${pkg.label}" — ${pkg.requests} запросов`;
 
   const token = generateToken(password, {
@@ -81,6 +83,7 @@ export async function createPayment(userId: number, packageKey: string): Promise
   });
 
   if (!data.Success) {
+    console.error(`[PAYMENT] Init FAILED userId=${userId} error=${data.Message} code=${data.ErrorCode}`);
     throw new Error(
       `Tinkoff Init failed: ${data.Message || 'unknown error'}` +
       (data.Details ? ` (${data.Details})` : '') +
@@ -90,9 +93,11 @@ export async function createPayment(userId: number, packageKey: string): Promise
 
   const db = getDb();
   const result = db.prepare(`
-    INSERT INTO payments (user_id, package_key, amount, tinkoff_payment_id, tinkoff_order_id)
-    VALUES (?, ?, ?, ?, ?)
-  `).run(userId, packageKey, pkg.price, data.PaymentId, tinkoffOrderId);
+    INSERT INTO payments (user_id, package_key, amount, tinkoff_payment_id, tinkoff_order_id, created_at)
+    VALUES (?, ?, ?, ?, ?, datetime('now', 'localtime'))
+  `  ).run(userId, packageKey, pkg.price, data.PaymentId, tinkoffOrderId);
+
+  console.log(`[PAYMENT] Created paymentId=${data.PaymentId} for userId=${userId}`);
 
   return { paymentUrl: data.PaymentURL, paymentId: Number(result.lastInsertRowid) };
 }
@@ -104,8 +109,14 @@ export async function checkPayment(paymentId: number, userId: number): Promise<{
   `).get(paymentId, userId) as IPaymentRecord | undefined;
 
   if (!payment) return { confirmed: false, message: 'Платёж не найден.' };
-  if (payment.status === 'confirmed') return { confirmed: true, message: 'Платёж уже подтверждён ранее.' };
-  if (payment.status === 'failed') return { confirmed: false, message: 'Платёж отклонён.' };
+  if (payment.status === 'confirmed') {
+    console.log(`[PAYMENT] check paymentId=${paymentId} already confirmed`);
+    return { confirmed: true, message: 'Платёж уже подтверждён ранее.' };
+  }
+  if (payment.status === 'failed') {
+    console.log(`[PAYMENT] check paymentId=${paymentId} already failed`);
+    return { confirmed: false, message: 'Платёж отклонён.' };
+  }
 
   const { terminalKey, password } = getCredentials();
   const token = generateToken(password, {
@@ -120,21 +131,32 @@ export async function checkPayment(paymentId: number, userId: number): Promise<{
       Token: token,
     });
 
+    console.log(`[PAYMENT] check paymentId=${paymentId} tinkoffStatus=${data.Status}`);
+
     if (data.Success && data.Status === 'CONFIRMED') {
       const pkg = PACKAGES.find((p) => p.key === payment.package_key);
-      if (pkg) {
-        addPaidRequests(userId, pkg.requests);
+      if (!pkg) {
+        console.error(`[PAYMENT] CONFIRMED but package not found: ${payment.package_key}`);
+        return { confirmed: true, message: '✅ Оплата подтверждена, но пакет не найден. Обратитесь к администратору.' };
       }
-      db.prepare(`UPDATE payments SET status = 'confirmed' WHERE id = ?`).run(paymentId);
+
+      const confirmPayment = db.transaction(() => {
+        addPaidRequests(userId, pkg.requests);
+        db.prepare(`UPDATE payments SET status = 'confirmed' WHERE id = ?`).run(paymentId);
+      });
+      confirmPayment();
+
+      console.log(`[PAYMENT] CONFIRMED paymentId=${paymentId} userId=${userId} added=${pkg.requests} requests`);
 
       return {
         confirmed: true,
-        message: `✅ Оплата подтверждена!\nПакет «${pkg?.label}» активирован — ${pkg?.requests} запросов добавлено.`,
+        message: `✅ Оплата подтверждена!\nПакет «${pkg.label}» активирован — ${pkg.requests} запросов добавлено.`,
       };
     }
 
     if (data.Status === 'REJECTED' || data.Status === 'CANCELED' || data.Status === 'REVERSED') {
       db.prepare(`UPDATE payments SET status = 'failed' WHERE id = ?`).run(paymentId);
+      console.log(`[PAYMENT] REJECTED paymentId=${paymentId} status=${data.Status}`);
       return { confirmed: false, message: `❌ Платёж отклонён (${data.Status}).` };
     }
 

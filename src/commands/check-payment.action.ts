@@ -10,23 +10,31 @@ const action = (bot: Bot) => {
             return;
         }
         const paymentId = Number(ctx.match?.[1]);
-        if (!paymentId) return;
+        if (!paymentId) {
+            console.warn(`[CHECK-PAYMENT] userId=${userId} invalid paymentId`);
+            return;
+        }
 
-        const { confirmed, message } = await checkPayment(paymentId, userId);
-        console.log(`[CHECK-PAYMENT] userId=${userId} paymentId=${paymentId} confirmed=${confirmed}`);
+        try {
+            const { confirmed, message } = await checkPayment(paymentId, userId);
+            console.log(`[CHECK-PAYMENT] userId=${userId} paymentId=${paymentId} confirmed=${confirmed}`);
 
-        const attachments = confirmed
-            ? [Keyboard.inlineKeyboard([
-                [Keyboard.button.callback("🚂 Найти поезд", CommandsName.Watch)],
-                [Keyboard.button.callback("🚂 Мои электрички", CommandsName.MyTrains)],
-                [Keyboard.button.callback("Главное меню", CommandsName.Start)],
-            ])]
-            : [Keyboard.inlineKeyboard([
-                [Keyboard.button.callback("🔄 Проверить ещё раз", `check-payment:${paymentId}`)],
-                [Keyboard.button.callback("Главное меню", CommandsName.Start)],
-            ])];
+            const attachments = confirmed
+                ? [Keyboard.inlineKeyboard([
+                    [Keyboard.button.callback("🚂 Найти поезд", CommandsName.Watch)],
+                    [Keyboard.button.callback("🚂 Мои электрички", CommandsName.MyTrains)],
+                    [Keyboard.button.callback("Главное меню", CommandsName.Start)],
+                ])]
+                : [Keyboard.inlineKeyboard([
+                    [Keyboard.button.callback("🔄 Проверить ещё раз", `check-payment:${paymentId}`)],
+                    [Keyboard.button.callback("Главное меню", CommandsName.Start)],
+                ])];
 
-        ctx.reply(message, { format: 'html', attachments });
+            ctx.reply(message, { format: 'html', attachments });
+        } catch (err: any) {
+            console.error(`[CHECK-PAYMENT] userId=${userId} paymentId=${paymentId} error:`, err?.message ?? err);
+            ctx.reply('❌ Ошибка при проверке платежа. Попробуйте позже.');
+        }
     });
 }
 export default action;

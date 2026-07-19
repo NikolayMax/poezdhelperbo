@@ -22,6 +22,8 @@ const action = (bot: Bot, deps: AppDependencies) => {
         const userId = ctx.message?.sender?.user_id;
         if (!userId) return;
 
+        if (ctx.message?.recipient?.chat_type !== 'dialog') return;
+
         const msg = ctx.message as any;
         const contactAttachments = msg?.body?.attachments?.filter((a: any) => a.type === 'contact');
 
@@ -37,8 +39,8 @@ const action = (bot: Bot, deps: AppDependencies) => {
 
             const { phone, name } = parseVcf(payload.vcf_info);
             console.log(`[CONTACT] userId=${userId} phone=${phone} name=${name}`);
-            setAgreement(userId);
             registerUser(userId, phone, name);
+            setAgreement(userId);
 
             if (process.env.CHANNEL_ID) {
                 const { text, attachments } = Buttons.SubscriptionPrompt();
@@ -53,6 +55,11 @@ const action = (bot: Bot, deps: AppDependencies) => {
 
         const text = ctx.message?.body?.text;
         if (!text) return;
+
+        if (text.length > 100) {
+            ctx.reply('⚠️ Слишком длинный запрос. Введите короткое название станции.');
+            return;
+        }
 
         const userData = await deps.redis.getData(userId);
 

@@ -13,7 +13,13 @@ export const actionSelectCity = (bot: Bot) => {
         const slug = ctx.match?.[1];
         if (!slug) return;
         const userData = await userRedis.getData(userId);
-        const currentCity = userData?.cities?.find((city) => city.slug === slug)
+        const currentCity = userData?.cities?.find((city) => city.slug === slug);
+
+        if (!currentCity) {
+            console.warn(`[SELECT-CITY] userId=${userId} slug=${slug} NOT FOUND in cities list`);
+            await ctx.answerOnCallback({ notification: '❌ Город не найден. Попробуйте снова.' }).catch(() => {});
+            return;
+        }
 
         if(userData.currentSelectCity === CurrentSelectCity.From) {
             userData.cityFrom = currentCity

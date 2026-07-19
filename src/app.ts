@@ -6,12 +6,13 @@ import { CommandsName } from "./consts";
 import { startTracker } from "./tracker";
 import { createDependencies } from "./container";
 import { isUserRegistered, isSubscribedToChannel, updateSubscriptionStatus } from "./referral";
+import { startWebhookServer } from "./webhook";
 
 process.on('unhandledRejection', (reason) => {
     console.error('[UNHANDLED REJECTION]', reason instanceof Error ? `${reason.message}\n${reason.stack}` : reason);
 });
 
-function init() {
+async function init() {
     const { parsed } = config();
 
     if (!parsed) {
@@ -35,10 +36,14 @@ function init() {
         if (payload?.startsWith('ref_')) {
             const referrerId = Number(payload.slice(4));
             if (referrerId && referrerId !== userId && !isUserRegistered(userId)) {
-                const userData = await deps.redis.getData(userId);
-                userData.pendingReferral = referrerId;
-                await deps.redis.setData(userId, userData);
-                console.log(`[BOT_STARTED] userId=${userId} pendingReferral=${referrerId}`);
+                try {
+                    const userData = await deps.redis.getData(userId);
+                    userData.pendingReferral = referrerId;
+                    await deps.redis.setData(userId, userData);
+                    console.log(`[BOT_STARTED] userId=${userId} pendingReferral=${referrerId}`);
+                } catch (err: any) {
+                    console.error(`[BOT_STARTED] userId=${userId} Redis error saving pendingReferral:`, err?.message ?? err);
+                }
             }
         }
 
@@ -70,11 +75,17 @@ function init() {
         ]);
 
         if (process.env.CHANNEL_ID) {
-            const subscribed = await isSubscribedToChannel(userId, process.env.CHANNEL_ID, bot);
-            updateSubscriptionStatus(userId, subscribed ? 1 : 0);
-            if (!subscribed) {
-                const { text, attachments } = Buttons.SubscriptionPrompt();
-                ctx.reply(text, { attachments });
+            try {
+                const subscribed = await isSubscribedToChannel(userId, process.env.CHANNEL_ID, bot);
+                updateSubscriptionStatus(userId, subscribed ? 1 : 0);
+                if (!subscribed) {
+                    const { text, attachments } = Buttons.SubscriptionPrompt();
+                    ctx.reply(text, { attachments });
+                    return;
+                }
+            } catch (err: any) {
+                console.error(`[BOT_STARTED] userId=${userId} subscription check error:`, err?.message ?? err);
+                ctx.reply('❌ Ошибка проверки подписки. Попробуйте позже.');
                 return;
             }
         }
@@ -96,11 +107,16 @@ function init() {
             || payload === 'start';
 
         if (!skipCheck) {
-            const subscribed = await isSubscribedToChannel(userId, channelId, bot);
-            updateSubscriptionStatus(userId, subscribed ? 1 : 0);
-            if (!subscribed) {
-                const { text, attachments } = Buttons.SubscriptionPrompt();
-                ctx.reply(text, { attachments });
+            try {
+                const subscribed = await isSubscribedToChannel(userId, channelId, bot);
+                updateSubscriptionStatus(userId, subscribed ? 1 : 0);
+                if (!subscribed) {
+                    const { text, attachments } = Buttons.SubscriptionPrompt();
+                    ctx.reply(text, { attachments });
+                    return;
+                }
+            } catch (err: any) {
+                console.error(`[CALLBACK] userId=${userId} subscription check error:`, err?.message ?? err);
                 return;
             }
         }
@@ -135,7 +151,37 @@ function init() {
     );
 
     bot.catch((err) => console.error('[BOT ERROR]', err instanceof Error ? `${err.message}\n${err.stack}` : err));
-    bot.start();
+
+    const mode = (process.env.BOT_MODE || 'polling').toLowerCase();
+
+    if (mode === 'webhook') {
+        const port = Number(process.env.WEBHOOK_PORT) || 3003;
+        const secret = process.env.WEBHOOK_SECRET || '';
+        const webhookUrl = process.env.WEBHOOK_URL;
+
+        if (!webhookUrl) {
+            throw new Error('WEBHOOK_URL not set — required for webhook mode');
+        }
+
+        bot.botInfo = await bot.api.getMyInfo();
+        console.log(`[WEBHOOK] Bot info: @${bot.botInfo.username}`);
+
+        startWebhookServer(bot, port, secret);
+
+        const apiUrl = 'https://platform-api2.max.ru';
+        const body = JSON.stringify({ url: webhookUrl, ...(secret ? { secret } : {}) });
+        fetch(`${apiUrl}/subscriptions`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': parsed.MAX_BOT_TOKEN },
+            body,
+        }).then(r => r.text()).then(t => {
+            console.log(`[WEBHOOK] Registered: ${webhookUrl} → ${t}`);
+        }).catch(err => {
+            console.error('[WEBHOOK] Registration failed:', err?.message ?? err);
+        });
+    } else {
+        bot.start();
+    }
 }
 
 init();

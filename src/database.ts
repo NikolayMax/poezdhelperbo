@@ -31,16 +31,16 @@ function initSchema() {
       subscribed            INTEGER NOT NULL DEFAULT 0,
       agreement_accepted    INTEGER NOT NULL DEFAULT 0,
       agreement_accepted_at TEXT,
-      registered_at         TEXT NOT NULL DEFAULT (datetime('now'))
+      registered_at         TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
     );
 
     CREATE TABLE IF NOT EXISTS user_balance (
       user_id                INTEGER PRIMARY KEY,
-      free_requests          INTEGER NOT NULL DEFAULT 3,
+      free_requests          INTEGER NOT NULL DEFAULT 10,
       paid_requests_remaining INTEGER NOT NULL DEFAULT 0,
       paid_requests_expiry   INTEGER,
-      created_at             TEXT NOT NULL DEFAULT (datetime('now')),
-      updated_at             TEXT NOT NULL DEFAULT (datetime('now'))
+      created_at             TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
+      updated_at             TEXT NOT NULL DEFAULT (datetime('now', 'localtime'))
     );
 
     CREATE TABLE IF NOT EXISTS tracked_trains (
@@ -56,7 +56,7 @@ function initSchema() {
       station_to_id     INTEGER NOT NULL,
       last_places_count INTEGER,
       notified          INTEGER NOT NULL DEFAULT 0,
-      created_at        TEXT NOT NULL DEFAULT (datetime('now')),
+      created_at        TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
       FOREIGN KEY (user_id) REFERENCES users(user_id)
     );
 
@@ -65,7 +65,7 @@ function initSchema() {
       referrer_id   INTEGER NOT NULL,
       referred_id   INTEGER NOT NULL UNIQUE,
       bonus_granted INTEGER NOT NULL DEFAULT 0,
-      created_at    TEXT NOT NULL DEFAULT (datetime('now')),
+      created_at    TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
       FOREIGN KEY (referrer_id) REFERENCES users(user_id),
       FOREIGN KEY (referred_id) REFERENCES users(user_id)
     );
@@ -78,7 +78,7 @@ function initSchema() {
       tinkoff_payment_id TEXT NOT NULL,
       tinkoff_order_id   TEXT NOT NULL UNIQUE,
       status             TEXT NOT NULL DEFAULT 'pending',
-      created_at         TEXT NOT NULL DEFAULT (datetime('now')),
+      created_at         TEXT NOT NULL DEFAULT (datetime('now', 'localtime')),
       FOREIGN KEY (user_id) REFERENCES users(user_id)
     );
   `);
