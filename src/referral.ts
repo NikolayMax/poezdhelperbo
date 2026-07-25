@@ -66,7 +66,7 @@ export function getReferralStats(userId: number): IReferralStats {
 export async function isSubscribedToChannel(userId: number, channelId: string, bot: Bot): Promise<boolean> {
   try {
     const response = await (bot.api.raw as any).get(`chats/${channelId}/members`, {
-      query: { user_id: userId },
+      query: { user_ids: String(userId) },
     });
     const found = response?.members?.some((m: any) => m.user_id === userId) === true;
     console.log(`[CHANNEL CHECK] userId=${userId} channelId=${channelId} found=${found}`);
