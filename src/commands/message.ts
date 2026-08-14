@@ -2,7 +2,7 @@ import { Keyboard, Bot } from "@maxhub/max-bot-api";
 import { CommandsName, CurrentSelectCity } from "../consts";
 import { Buttons } from "../command.button";
 import type { AppDependencies } from "../container";
-import { isUserRegistered, registerUser, setAgreement } from "../referral";
+import { isUserRegistered, registerUser, setAgreement, guardSubscription } from "../referral";
 
 function parseVcf(vcf: string): { phone: string; name: string | null } {
     let phone = '';
@@ -60,6 +60,8 @@ const action = (bot: Bot, deps: AppDependencies) => {
             ctx.reply('⚠️ Слишком длинный запрос. Введите короткое название станции.');
             return;
         }
+
+        if (!await guardSubscription(ctx, userId, bot)) return;
 
         const userData = await deps.redis.getData(userId);
 

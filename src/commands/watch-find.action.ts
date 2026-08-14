@@ -4,6 +4,7 @@ import axios from "axios";
 import { userRedis } from "../redis";
 import { ITrain } from "../types/traine.interface";
 import { isTrainTracked } from "../tracker";
+import { guardSubscription } from "../referral";
 
 const action = (bot: Bot) => {
     bot.action(CommandsName.WatchFind, async (ctx) => {
@@ -12,6 +13,7 @@ const action = (bot: Bot) => {
             await ctx.answerOnCallback({ notification: '❌ Ошибка авторизации' }).catch((err) => console.error(`[AUTH GUARD]`, err));
             return;
         }
+        if (!await guardSubscription(ctx, userId, bot)) return;
         const userData = await userRedis.getData(userId);
         userData.cities = [];
         const {cityFrom, cityTo, selectedYear, selectedMonth, selectedDay} = userData;

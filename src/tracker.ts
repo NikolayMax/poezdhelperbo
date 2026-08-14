@@ -40,7 +40,7 @@ const DELETE_TRACK = `
 
 const SELECT_ACTIVE = `
   SELECT * FROM tracked_trains
-  WHERE datetime(date || ' ' || departure_time) >= datetime('now', 'localtime', '-1 hours')
+  WHERE datetime(date || ' ' || departure_time) >= datetime('now', 'localtime', '-3 hours')
 `;
 
 const CHECK_TRACKED = `
@@ -112,7 +112,7 @@ export function startTracker(
   expiryFn: (userId: number, track: ITrackedTrain) => void,
 ): void {
   const TRACKER_INTERVAL = 10 * 1000;
-  const EXPIRY_THRESHOLD = 60 * 60 * 1000;
+  const EXPIRY_THRESHOLD = 3 * 60 * 60 * 1000;
 
   const check = async () => {
     try {

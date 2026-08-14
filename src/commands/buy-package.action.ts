@@ -1,6 +1,7 @@
 import { Keyboard, Bot } from "@maxhub/max-bot-api";
 import { CommandsName, PACKAGES } from "../consts";
 import { createPayment } from "../payments/tinkoff";
+import { guardSubscription } from "../referral";
 
 const action = (bot: Bot) => {
     for (const pkg of PACKAGES) {
@@ -10,6 +11,7 @@ const action = (bot: Bot) => {
                 await ctx.answerOnCallback({ notification: '❌ Ошибка авторизации' }).catch((err) => console.error(`[AUTH GUARD]`, err));
                 return;
             }
+            if (!await guardSubscription(ctx, userId, bot)) return;
 
             try {
                 const { paymentUrl, paymentId } = await createPayment(userId, pkg.key);

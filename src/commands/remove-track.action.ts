@@ -1,6 +1,7 @@
 import { Keyboard, Bot } from "@maxhub/max-bot-api";
 import { CommandsName } from "../consts";
 import { removeTrack, getTrackById } from "../tracker";
+import { guardSubscription } from "../referral";
 
 const action = (bot: Bot) => {
     bot.action(new RegExp(CommandsName.RemoveTrack), async (ctx) => {
@@ -9,6 +10,7 @@ const action = (bot: Bot) => {
             await ctx.answerOnCallback({ notification: '❌ Ошибка авторизации' }).catch((err) => console.error(`[AUTH GUARD]`, err));
             return;
         }
+        if (!await guardSubscription(ctx, userId, bot)) return;
         const trackId = Number(ctx.match?.[1]);
         if (!trackId) return;
 

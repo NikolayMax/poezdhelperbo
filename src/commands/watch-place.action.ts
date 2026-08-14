@@ -3,6 +3,7 @@ import { CommandsName } from "../consts";
 import { deductRequest, refundRequest } from "../balance";
 import { userRedis } from "../redis";
 import { addTrack } from "../tracker";
+import { guardSubscription } from "../referral";
 
 const action = (bot: Bot) => {
     bot.action(new RegExp(CommandsName.WatchPlace), async (ctx) => {
@@ -11,6 +12,7 @@ const action = (bot: Bot) => {
             await ctx.answerOnCallback({ notification: '❌ Ошибка авторизации' }).catch((err) => console.error(`[AUTH GUARD]`, err));
             return;
         }
+        if (!await guardSubscription(ctx, userId, bot)) return;
         const trainId = Number(ctx.match?.[1]);
         if (!trainId) return;
 

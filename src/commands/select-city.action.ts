@@ -2,6 +2,7 @@ import { Bot } from "@maxhub/max-bot-api";
 import { CommandsName, CurrentSelectCity } from "../consts";
 import { Buttons } from "../command.button";
 import { userRedis } from "../redis";
+import { guardSubscription } from "../referral";
 
 export const actionSelectCity = (bot: Bot) => {
     bot.action(new RegExp(CommandsName.SelectCity), async (ctx) => {
@@ -10,6 +11,7 @@ export const actionSelectCity = (bot: Bot) => {
             await ctx.answerOnCallback({ notification: '❌ Ошибка авторизации' }).catch((err) => console.error(`[AUTH GUARD]`, err));
             return;
         }
+        if (!await guardSubscription(ctx, userId, bot)) return;
         const slug = ctx.match?.[1];
         if (!slug) return;
         const userData = await userRedis.getData(userId);

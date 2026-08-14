@@ -1,5 +1,6 @@
 import { Bot } from '@maxhub/max-bot-api';
 import { getDb } from './database';
+import { Buttons } from './command.button';
 
 export interface IUserRecord {
   user_id: number;
@@ -86,6 +87,21 @@ export function isUserSubscribed(userId: number): boolean {
   const db = getDb();
   const row = db.prepare('SELECT subscribed FROM users WHERE user_id = ?').get(userId) as { subscribed: number } | undefined;
   return row ? row.subscribed === 1 : false;
+}
+
+export async function guardSubscription(ctx: any, userId: number, bot: Bot): Promise<boolean> {
+  const channelId = process.env.CHANNEL_ID;
+  if (!channelId) return true;
+
+  const subscribed = await isSubscribedToChannel(userId, channelId, bot);
+  updateSubscriptionStatus(userId, subscribed ? 1 : 0);
+
+  if (!subscribed) {
+    const { text, attachments } = Buttons.SubscriptionPrompt();
+    ctx.reply(text, { attachments });
+    return false;
+  }
+  return true;
 }
 
 export function applyReferralBonus(referrerId: number, referredId: number): boolean {

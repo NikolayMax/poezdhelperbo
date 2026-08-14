@@ -1,6 +1,7 @@
 import { Bot } from "@maxhub/max-bot-api";
 import { CommandsName } from "../consts";
 import { addPaidRequests } from "../balance";
+import { guardSubscription } from "../referral";
 
 const ADMIN_ID = Number(process.env.ADMIN_USER_ID) || 0;
 
@@ -11,6 +12,7 @@ const action = (bot: Bot) => {
             await ctx.answerOnCallback({ notification: '❌ Ошибка авторизации' }).catch((err) => console.error(`[AUTH GUARD]`, err));
             return;
         }
+        if (!await guardSubscription(ctx, userId, bot)) return;
 
         if (userId !== ADMIN_ID) {
             return ctx.reply('⛔ У вас нет доступа к этой команде.');
