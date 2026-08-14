@@ -61,7 +61,7 @@ export const Buttons = {
     [CommandsName.CityTo]: (): ButtonResult => ({
         text: 'Введите город куда:',
     }),
-    [CommandsName.WatchDate]: async (_ctx?: Context): Promise<ButtonResult> => {
+    [CommandsName.WatchDate]: async (): Promise<ButtonResult> => {
         const currentMonth = new Date().getMonth();
         const monthRows = [];
         for (let i = currentMonth; i < 12; i++) {

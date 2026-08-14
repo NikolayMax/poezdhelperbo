@@ -6,7 +6,7 @@ import { PACKAGES } from '../consts';
 
 const API_URL = 'https://securepay.tinkoff.ru';
 
-interface TinkoffInitResponse {
+interface ITinkoffInitResponse {
   Success: boolean;
   PaymentId: string;
   PaymentURL: string;
@@ -15,7 +15,7 @@ interface TinkoffInitResponse {
   Details?: string;
 }
 
-interface TinkoffGetStateResponse {
+interface ITinkoffGetStateResponse {
   Success: boolean;
   Status: string;
   PaymentId: string;
@@ -74,7 +74,7 @@ export async function createPayment(userId: number, packageKey: string): Promise
     Description: description,
   });
 
-  const { data } = await axios.post<TinkoffInitResponse>(`${API_URL}/v2/Init/`, {
+  const { data } = await axios.post<ITinkoffInitResponse>(`${API_URL}/v2/Init/`, {
     TerminalKey: terminalKey,
     Amount: amountInKopecks,
     OrderId: tinkoffOrderId,
@@ -125,7 +125,7 @@ export async function checkPayment(paymentId: number, userId: number): Promise<{
   });
 
   try {
-    const { data } = await axios.post<TinkoffGetStateResponse>(`${API_URL}/v2/GetState/`, {
+    const { data } = await axios.post<ITinkoffGetStateResponse>(`${API_URL}/v2/GetState/`, {
       TerminalKey: terminalKey,
       PaymentId: payment.tinkoff_payment_id,
       Token: token,

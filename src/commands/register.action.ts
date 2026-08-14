@@ -1,10 +1,10 @@
 import { Keyboard, Bot } from "@maxhub/max-bot-api";
 import { CommandsName } from "../consts";
 import { Buttons } from "../command.button";
-import type { AppDependencies } from "../container";
+import type { IAppDependencies } from "../container";
 import { getReferralCode, getReferralStats, isSubscribedToChannel, updateSubscriptionStatus, applyReferralBonus } from "../referral";
 
-const action = (bot: Bot, deps: AppDependencies) => {
+const action = (bot: Bot, deps: IAppDependencies) => {
     bot.action('referral-info', async (ctx) => {
         const user = ctx.user;
         if (!user) return;

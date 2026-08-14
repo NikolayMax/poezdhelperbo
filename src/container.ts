@@ -4,7 +4,7 @@ import * as balance from './balance';
 import * as tracker from './tracker';
 import { createPayment, checkPayment } from './payments/tinkoff';
 
-export interface AppDependencies {
+export interface IAppDependencies {
   redis: typeof userRedis;
   trainsApi: typeof trainsApi;
   balance: typeof balance;
@@ -12,7 +12,7 @@ export interface AppDependencies {
   payments: { createPayment: typeof createPayment; checkPayment: typeof checkPayment };
 }
 
-export function createDependencies(): AppDependencies {
+export function createDependencies(): IAppDependencies {
   return {
     redis: userRedis,
     trainsApi,

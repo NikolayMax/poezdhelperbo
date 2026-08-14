@@ -1,7 +1,7 @@
 import { Keyboard, Bot } from "@maxhub/max-bot-api";
 import { CommandsName, CurrentSelectCity } from "../consts";
 import { Buttons } from "../command.button";
-import type { AppDependencies } from "../container";
+import type { IAppDependencies } from "../container";
 import { isUserRegistered, registerUser, setAgreement, guardSubscription } from "../referral";
 
 function parseVcf(vcf: string): { phone: string; name: string | null } {
@@ -17,7 +17,7 @@ function parseVcf(vcf: string): { phone: string; name: string | null } {
     return { phone, name };
 }
 
-const action = (bot: Bot, deps: AppDependencies) => {
+const action = (bot: Bot, deps: IAppDependencies) => {
     bot.on('message_created', async (ctx) => {
         const userId = ctx.message?.sender?.user_id;
         if (!userId) return;

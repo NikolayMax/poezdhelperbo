@@ -1,9 +1,12 @@
 import { ICity } from '../../../../src/types';
 
-export interface MockConfig {
-	delay?: number; // Задержка ответа в ms
-	shouldFail?: boolean; // Имитировать ошибку
-	failMessage?: string; // Сообщение ошибки
+export interface IMockConfig {
+	// Задержка ответа в ms
+	delay?: number;
+	// Имитировать ошибку
+	shouldFail?: boolean;
+	// Сообщение ошибки
+	failMessage?: string;
 }
 type ResponseMock = { ok: boolean; status: number; json: () => Promise<{ data: ICity[] }> };
 export const mockCities: ICity[] = [
@@ -20,7 +23,7 @@ export const mockCities: ICity[] = [
 		entity_type_id: 6,
 	},
 ];
-export const mockResponse = async (mockCities: ICity[], config: MockConfig = {}) => {
+export const mockResponse = async (mockCities: ICity[], config: IMockConfig = {}) => {
 	const response: ResponseMock = {
 		ok: true,
 		status: 200,

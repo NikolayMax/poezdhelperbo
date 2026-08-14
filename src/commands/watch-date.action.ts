@@ -11,7 +11,7 @@ const action = (bot: Bot) => {
             return;
         }
         if (!await guardSubscription(ctx, userId, bot)) return;
-        const {text, attachments} = await Buttons[CommandsName.WatchDate](ctx);
+        const {text, attachments} = await Buttons[CommandsName.WatchDate]();
         ctx.reply(text, { attachments })
     })
 }
